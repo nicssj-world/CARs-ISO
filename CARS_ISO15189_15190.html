@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบแก้ไขข้อบกพร่อง (CARS) - ISO 15189 / ISO 15190</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --sidebar-width: 250px;
+      --primary: #1a6faf;
+      --primary-dark: #145a8c;
+      --accent: #e8f4fd;
+      --header-bg: #1a6faf;
+      --sidebar-bg: #2c3e50;
+      --sidebar-text: #ecf0f1;
+      --sidebar-hover: #34495e;
+      --success: #27ae60;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Sarabun', 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    /* ─── TOPBAR ─── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1040;
+      height: 56px;
+      background: var(--header-bg);
+      display: flex; align-items: center;
+      padding: 0 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .topbar-brand {
+      display: flex; align-items: center; gap: 10px;
+      color: #fff; font-size: 16px; font-weight: 700;
+      text-decoration: none;
+      flex: 1;
+    }
+    .topbar-brand .logo-circle {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      color: var(--primary); font-weight: 900; font-size: 14px;
+    }
+    .topbar-nav { display: flex; align-items: center; gap: 8px; }
+    .topbar-nav a {
+      color: rgba(255,255,255,0.85); font-size: 13px; text-decoration: none;
+      padding: 4px 10px; border-radius: 4px; transition: background .2s;
+    }
+    .topbar-nav a:hover { background: rgba(255,255,255,0.15); }
+    .topbar-user {
+      display: flex; align-items: center; gap: 8px;
+      color: rgba(255,255,255,0.9); font-size: 13px; margin-left: 12px;
+    }
+    .topbar-user .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 14px;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      position: fixed; top: 56px; left: 0; bottom: 0;
+      width: var(--sidebar-width);
+      background: var(--sidebar-bg);
+      overflow-y: auto;
+      z-index: 1030;
+    }
+    .sidebar-menu { list-style: none; margin: 0; padding: 12px 0; }
+    .sidebar-menu li a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      color: var(--sidebar-text); text-decoration: none;
+      font-size: 13.5px; transition: background .2s;
+    }
+    .sidebar-menu li a:hover,
+    .sidebar-menu li.active a {
+      background: var(--sidebar-hover); color: #fff;
+    }
+    .sidebar-menu li a i { width: 18px; text-align: center; font-size: 14px; }
+    .sidebar-divider {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin: 8px 0;
+    }
+    .sidebar-heading {
+      padding: 10px 20px 4px;
+      color: rgba(255,255,255,0.4);
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .8px;
+    }
+
+    /* ─── MAIN CONTENT ─── */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      margin-top: 56px;
+      padding: 24px;
+      min-height: calc(100vh - 56px);
+    }
+
+    /* ─── BREADCRUMB ─── */
+    .breadcrumb-bar {
+      background: #fff; border-radius: 8px;
+      padding: 10px 16px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    }
+    .breadcrumb-bar a { color: var(--primary); font-size: 13px; text-decoration: none; }
+    .breadcrumb-bar span { color: #888; font-size: 13px; }
+
+    /* ─── CARD ─── */
+    .card {
+      background: #fff; border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      margin-bottom: 20px; border: none;
+    }
+    .card-header-custom {
+      padding: 14px 20px;
+      border-bottom: 2px solid var(--accent);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-header-custom .icon-box {
+      width: 32px; height: 32px; border-radius: 6px;
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .card-header-custom h5 {
+      margin: 0; font-size: 15px; font-weight: 700; color: #2c3e50;
+    }
+    .card-body-custom { padding: 20px; }
+
+    /* ─── FORM ELEMENTS ─── */
+    .form-label {
+      font-weight: 600; color: #3a3a3a; font-size: 13px; margin-bottom: 5px;
+    }
+    .form-label .req { color: var(--danger); }
+    .form-control, .form-select {
+      border: 1px solid #d8dde3; border-radius: 6px;
+      font-size: 13.5px; color: #2c3e50;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,111,175,.12);
+    }
+
+    /* NC Type Pills */
+    .nc-type-group { display: flex; gap: 8px; }
+    .nc-type-pill input[type="radio"] { display: none; }
+    .nc-type-pill label {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 20px; border-radius: 20px; cursor: pointer;
+      border: 2px solid #d0d7de; color: #555; font-size: 13px; font-weight: 600;
+      transition: all .2s; user-select: none;
+    }
+    .nc-type-pill input:checked + label {
+      border-color: var(--primary); background: var(--primary); color: #fff;
+    }
+    .nc-type-pill.obs input:checked + label {
+      border-color: var(--warning); background: var(--warning); color: #fff;
+    }
+
+    /* ─── RICH TEXT EDITOR ─── */
+    .rte-wrapper { border: 1px solid #d8dde3; border-radius: 6px; overflow: hidden; }
+    .rte-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,111,175,.12); }
+    .rte-toolbar {
+      background: #f7f9fb; border-bottom: 1px solid #e8ecef;
+      padding: 5px 8px; display: flex; flex-wrap: wrap; gap: 2px; align-items: center;
+    }
+    .rte-toolbar button {
+      background: none; border: none; padding: 4px 7px;
+      border-radius: 4px; cursor: pointer; color: #555; font-size: 13px;
+      transition: background .15s;
+    }
+    .rte-toolbar button:hover { background: #e2e8f0; color: #222; }
+    .rte-toolbar button.active { background: #d0e8f8; color: var(--primary); }
+    .rte-toolbar .sep { width: 1px; height: 18px; background: #d8dde3; margin: 0 3px; }
+    .rte-toolbar select {
+      border: 1px solid #d8dde3; border-radius: 4px; font-size: 12px;
+      padding: 2px 4px; color: #555; background: #fff;
+    }
+    .rte-content {
+      min-height: 120px; padding: 10px 12px;
+      outline: none; font-size: 14px; line-height: 1.7; color: #2c3e50;
+    }
+    .rte-content:empty:before {
+      content: attr(data-placeholder);
+      color: #aaa; pointer-events: none;
+    }
+    .rte-content p { margin: 0 0 6px; }
+
+    /* Clause search */
+    .clause-search-wrap { position: relative; }
+    .clause-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 500;
+      background: #fff; border: 1px solid #d8dde3; border-top: none;
+      border-radius: 0 0 6px 6px; max-height: 220px; overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,.12); display: none;
+    }
+    .clause-dropdown.show { display: block; }
+    .clause-option {
+      padding: 8px 12px; cursor: pointer; font-size: 13px; color: #333;
+      border-bottom: 1px solid #f0f0f0; transition: background .15s;
+    }
+    .clause-option:hover, .clause-option.focused { background: var(--accent); color: var(--primary); }
+    .clause-option .clause-num { font-weight: 700; color: var(--primary); }
+
+    /* Correction round badge */
+    .round-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff3cd; color: #856404; padding: 4px 12px;
+      border-radius: 20px; font-size: 12px; font-weight: 600;
+      border: 1px solid #ffc107;
+    }
+    .date-display {
+      background: #f8f9fa; border: 1px solid #e0e0e0;
+      border-radius: 6px; padding: 7px 12px; font-size: 13px; color: #555;
+    }
+
+    /* Alert note */
+    .note-alert {
+      background: #fff8e1; border: 1px solid #ffe082;
+      border-left: 4px solid var(--warning);
+      border-radius: 6px; padding: 10px 14px;
+      font-size: 12.5px; color: #7a5f00;
+    }
+
+    /* File upload */
+    .file-upload-area {
+      border: 2px dashed #d0d7de; border-radius: 8px;
+      padding: 20px; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .file-upload-area:hover { border-color: var(--primary); background: var(--accent); }
+    .file-upload-area input[type="file"] { display: none; }
+    .file-upload-area .upload-icon { font-size: 28px; color: #a0aec0; margin-bottom: 8px; }
+    .file-name-display {
+      margin-top: 8px; font-size: 12.5px; color: #555;
+      display: none;
+    }
+
+    /* Action buttons */
+    .btn-primary-custom {
+      background: var(--primary); color: #fff; border: none;
+      padding: 9px 24px; border-radius: 6px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-primary-custom:hover { background: var(--primary-dark); }
+    .btn-secondary-custom {
+      background: #6c757d; color: #fff; border: none;
+      padding: 9px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-secondary-custom:hover { background: #5a6268; }
+    .btn-success-custom {
+      background: var(--success); color: #fff; border: none;
+      padding: 9px 24px; border-radius: 6px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-success-custom:hover { background: #219150; }
+    .btn-danger-custom {
+      background: var(--danger); color: #fff; border: none;
+      padding: 9px 20px; border-radius: 6px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    .btn-danger-custom:hover { background: #c0392b; }
+
+    /* Section header */
+    .section-title {
+      font-size: 14px; font-weight: 700; color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 6px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ─── MODAL ─── */
+    .modal-header-custom {
+      background: var(--primary); color: #fff; border-radius: 8px 8px 0 0;
+      padding: 14px 20px;
+    }
+    .modal-header-custom .modal-title { font-size: 15px; font-weight: 700; }
+    .modal-header-custom .btn-close { filter: invert(1); }
+
+    /* Status timeline */
+    .timeline { list-style: none; padding: 0; margin: 0; }
+    .timeline li {
+      display: flex; gap: 12px; padding: 8px 0;
+      border-left: 2px solid #e0e0e0; margin-left: 8px;
+      padding-left: 16px; position: relative;
+    }
+    .timeline li:last-child { border-left-color: transparent; }
+    .timeline li::before {
+      content: '';
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--primary); border: 2px solid #fff;
+      position: absolute; left: -7px; top: 12px;
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .timeline li.pending::before { background: #ccc; box-shadow: 0 0 0 2px #ccc; }
+    .timeline-date { font-size: 11px; color: #999; }
+    .timeline-text { font-size: 13px; color: #333; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: transform .3s; }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+    }
+
+    /* Highlight badge for NC type */
+    .nc-info-bar {
+      background: linear-gradient(135deg, #e8f4fd, #d0e8f8);
+      border: 1px solid #a8d4f0; border-radius: 8px;
+      padding: 12px 16px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .nc-info-bar .tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--primary); color: #fff;
+      padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;
+    }
+    .nc-info-bar .nc-id { font-size: 13px; color: #444; }
+
+    /* Form group spacing */
+    .form-group-mb { margin-bottom: 18px; }
+
+    /* Validation states */
+    .is-invalid-custom .rte-wrapper { border-color: var(--danger); }
+    .invalid-feedback-custom { color: var(--danger); font-size: 12px; margin-top: 4px; display: none; }
+    .is-invalid-custom .invalid-feedback-custom { display: block; }
+
+    /* Success toast */
+    .toast-custom {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      background: var(--success); color: #fff;
+      padding: 12px 20px; border-radius: 8px; font-size: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      display: none; align-items: center; gap: 10px;
+    }
+    .toast-custom.show { display: flex; animation: slideIn .3s ease; }
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);  opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ TOPBAR ═══════════════════ -->
+<nav class="topbar">
+  <a href="#" class="topbar-brand">
+    <div class="logo-circle"><i class="fa-solid fa-flask"></i></div>
+    <span>ระบบรับรองมาตรฐานห้องปฏิบัติการ</span>
+  </a>
+  <div class="topbar-nav">
+    <a href="#"><i class="fa-solid fa-house me-1"></i>หน้าแรก</a>
+    <a href="#"><i class="fa-solid fa-circle-question me-1"></i>FAQ</a>
+  </div>
+  <div class="topbar-user">
+    <div class="avatar"><i class="fa-solid fa-user"></i></div>
+    <div>
+      <div style="font-size:12px;font-weight:600">โรงพยาบาลชลบุรี</div>
+      <a href="#" style="font-size:11px;color:rgba(255,255,255,.7)">ออกจากระบบ</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-heading">เมนูหลัก</div>
+  <ul class="sidebar-menu">
+    <li>
+      <a href="#"><i class="fa-solid fa-house"></i> หน้าแรก</a>
+    </li>
+    <li class="active">
+      <a href="#"><i class="fa-solid fa-triangle-exclamation"></i> Nonconformity (NC)</a>
+    </li>
+    <li>
+      <a href="#"><i class="fa-solid fa-clipboard-list"></i> การประเมิน</a>
+    </li>
+  </ul>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-heading">การจัดการ</div>
+  <ul class="sidebar-menu">
+    <li>
+      <a href="#"><i class="fa-solid fa-key"></i> เปลี่ยนรหัสผ่าน</a>
+    </li>
+    <li>
+      <a href="#"><i class="fa-solid fa-message"></i> กระดานสนทนา</a>
+    </li>
+  </ul>
+
+  <!-- NC Status Timeline -->
+  <div style="padding: 16px 14px; margin-top: 12px;">
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">สถานะ NC</div>
+    <ul class="timeline" style="margin-left:0">
+      <li style="color:#fff">
+        <div>
+          <div class="timeline-text" style="color:#e0e0e0">รับ NC จากผู้ตรวจ</div>
+          <div class="timeline-date">05/06/2026</div>
+        </div>
+      </li>
+      <li style="color:#fff">
+        <div>
+          <div class="timeline-text" style="color:#e0e0e0">กำลังบันทึกการแก้ไข</div>
+          <div class="timeline-date">ปัจจุบัน</div>
+        </div>
+      </li>
+      <li class="pending">
+        <div>
+          <div class="timeline-text" style="color:#888">ส่งให้ผู้ตรวจพิจารณา</div>
+        </div>
+      </li>
+      <li class="pending">
+        <div>
+          <div class="timeline-text" style="color:#888">ผู้ตรวจยืนยัน</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+<div class="main-content">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb-bar">
+    <a href="#"><i class="fa-solid fa-house"></i> หน้าแรก</a>
+    <span><i class="fa-solid fa-chevron-right" style="font-size:10px"></i></span>
+    <span>รายงาน Nonconformity Report (NC)</span>
+  </div>
+
+  <!-- NC List Card -->
+  <div class="card" id="ncListCard">
+    <div class="card-header-custom">
+      <div class="icon-box"><i class="fa-solid fa-list-check"></i></div>
+      <h5>รายการ NC ทั้งหมด</h5>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:#888"><span id="ncCountDisplay">79</span> รายการ</span>
+        <input type="text" class="form-control" id="ncSearchInput"
+               style="width:200px;font-size:12px;padding:4px 10px"
+               placeholder="ค้นหา ผู้ตรวจ / Clause..."
+               oninput="filterNCList(this.value)">
+      </div>
+    </div>
+    <div class="card-body-custom" style="padding:12px">
+      <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
+        <table class="table table-sm table-hover mb-0" id="ncTable" style="font-size:12.5px">
+          <thead class="table-light" style="position:sticky;top:0;z-index:2">
+            <tr>
+              <th style="width:40px">#</th>
+              <th style="min-width:120px">ผู้ตรวจ</th>
+              <th style="width:55px;text-align:center">ประเภท</th>
+              <th style="width:78px">มาตรฐาน</th>
+              <th>Clause</th>
+              <th style="width:100px">สถานะ</th>
+              <th style="width:68px"></th>
+            </tr>
+          </thead>
+          <tbody id="ncTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- NC Info Bar -->
+  <div class="nc-info-bar" id="ncInfoBar" style="display:none">
+    <span class="tag"><i class="fa-solid fa-id-card"></i>&nbsp;NC #<span id="ncIdDisplay">—</span></span>
+    <span class="tag" style="background:#6c757d;font-size:11.5px"><i class="fa-solid fa-user-check me-1"></i><span id="ncInspectorDisplay">—</span></span>
+    <span class="tag" style="background:#e67e22"><i class="fa-solid fa-building"></i> โรงพยาบาลชลบุรี</span>
+    <span class="nc-id"><i class="fa-solid fa-calendar me-1"></i>วันที่รับ NC: 05/06/2026</span>
+    <span class="nc-id" style="margin-left:auto"><span id="currentStatusBadge" class="badge" style="background:#f39c12;font-size:12px;">กำลังดำเนินการ</span></span>
+  </div>
+
+  <form id="carsForm" novalidate>
+
+    <!-- ══════════ SECTION 1: NC DATA ══════════ -->
+    <div class="card">
+      <div class="card-header-custom">
+        <div class="icon-box"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <h5>ข้อมูล NC</h5>
+        <span style="margin-left:auto;font-size:12px;color:#888">
+          <i class="fa-solid fa-circle-info me-1"></i>กรุณากรอกรายละเอียดให้ครบถ้วน
+        </span>
+      </div>
+      <div class="card-body-custom">
+
+        <div class="section-title">
+          <i class="fa-solid fa-tag"></i> ประเภทและข้อกำหนด
+        </div>
+
+        <div class="row g-3 form-group-mb">
+          <!-- NC Type -->
+          <div class="col-md-3">
+            <label class="form-label">ประเภท NC <span class="req">*</span></label>
+            <div class="nc-type-group">
+              <div class="nc-type-pill">
+                <input type="radio" name="ncType" id="ncC" value="C" checked>
+                <label for="ncC"><i class="fa-solid fa-c"></i> C</label>
+              </div>
+              <div class="nc-type-pill obs">
+                <input type="radio" name="ncType" id="ncO" value="O">
+                <label for="ncO"><i class="fa-solid fa-o"></i> O</label>
+              </div>
+            </div>
+            <div style="font-size:11px;color:#888;margin-top:5px">
+              <span id="ncTypeDesc">C = Conformance / ข้อบกพร่อง</span>
+            </div>
+          </div>
+
+          <!-- Standard Type -->
+          <div class="col-md-4">
+            <label class="form-label">ประเภทข้อกำหนด</label>
+            <select class="form-select" id="stdType" onchange="onStdChange()">
+              <option value="">— เลือกมาตรฐาน —</option>
+              <option value="15189" selected>ISO 15189</option>
+              <option value="15190">ISO 15190 : 2020</option>
+            </select>
+          </div>
+
+          <!-- Clause Search -->
+          <div class="col-md-5">
+            <label class="form-label">ข้อกำหนด</label>
+            <div class="clause-search-wrap">
+              <input type="text" class="form-control" id="clauseInput"
+                placeholder="พิมพ์เพื่อค้นหาข้อกำหนด เช่น 7.3.5"
+                autocomplete="off"
+                oninput="searchClause(this.value)"
+                onfocus="showClauseDropdown()"
+                onblur="hideClauseDropdown()"
+                value="7.3.5 Biological reference intervals and clinical decision limits" />
+              <div class="clause-dropdown" id="clauseDropdown"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <i class="fa-solid fa-file-lines"></i> รายละเอียด
+        </div>
+
+        <!-- Problem Details -->
+        <div class="form-group-mb" id="grpProblem">
+          <label class="form-label">รายละเอียดของปัญหา <span class="req">*</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" title="Bold" onclick="fmt('bold')"><b>B</b></button>
+              <button type="button" title="Italic" onclick="fmt('italic')"><i>I</i></button>
+              <button type="button" title="Underline" onclick="fmt('underline')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" title="Align left" onclick="fmt('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
+              <button type="button" title="Align center" onclick="fmt('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
+              <button type="button" title="Align right" onclick="fmt('justifyRight')"><i class="fa-solid fa-align-right"></i></button>
+              <div class="sep"></div>
+              <button type="button" title="Ordered list" onclick="fmt('insertOrderedList')"><i class="fa-solid fa-list-ol"></i></button>
+              <button type="button" title="Unordered list" onclick="fmt('insertUnorderedList')"><i class="fa-solid fa-list-ul"></i></button>
+              <div class="sep"></div>
+              <button type="button" title="Subscript" onclick="fmt('subscript')">x<sub>2</sub></button>
+              <button type="button" title="Superscript" onclick="fmt('superscript')">x<sup>2</sup></button>
+              <div class="sep"></div>
+              <button type="button" title="Clear formatting" onclick="fmt('removeFormat')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_problem" contenteditable="true"
+              data-placeholder="ระบุรายละเอียดของปัญหาหรือข้อบกพร่องที่พบ...">
+              <p>1. &nbsp; &nbsp;พบค่าอ้างอิงที่ใช้ในระบบ HIS ไม่สอดคล้องกับเอกสารกำกับน้ำยา และไม่พบบันทึกการหาค่าอ้างอิงที่เหมาะสมกับประชากร</p>
+            </div>
+          </div>
+          <div class="invalid-feedback-custom">กรุณากรอกรายละเอียดของปัญหา</div>
+        </div>
+
+        <!-- Evidence -->
+        <div class="form-group-mb" id="grpEvidence">
+          <label class="form-label">หลักฐาน <span class="req">*</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" onclick="fmt2('bold','rte_evidence')"><b>B</b></button>
+              <button type="button" onclick="fmt2('italic','rte_evidence')"><i>I</i></button>
+              <button type="button" onclick="fmt2('underline','rte_evidence')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('justifyLeft','rte_evidence')"><i class="fa-solid fa-align-left"></i></button>
+              <button type="button" onclick="fmt2('justifyCenter','rte_evidence')"><i class="fa-solid fa-align-center"></i></button>
+              <button type="button" onclick="fmt2('justifyRight','rte_evidence')"><i class="fa-solid fa-align-right"></i></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('insertOrderedList','rte_evidence')"><i class="fa-solid fa-list-ol"></i></button>
+              <button type="button" onclick="fmt2('insertUnorderedList','rte_evidence')"><i class="fa-solid fa-list-ul"></i></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('removeFormat','rte_evidence')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_evidence" contenteditable="true"
+              data-placeholder="ระบุหลักฐานที่พบ เช่น เอกสาร บันทึก หรือภาพถ่าย..."></div>
+          </div>
+          <div class="invalid-feedback-custom">กรุณากรอกหลักฐาน</div>
+        </div>
+
+        <!-- Location -->
+        <div class="form-group-mb" id="grpLocation">
+          <label class="form-label">สถานที่ <span class="req">*</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" onclick="fmt2('bold','rte_location')"><b>B</b></button>
+              <button type="button" onclick="fmt2('italic','rte_location')"><i>I</i></button>
+              <button type="button" onclick="fmt2('underline','rte_location')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('removeFormat','rte_location')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_location" contenteditable="true"
+              data-placeholder="ระบุสถานที่หรือแผนก..."></div>
+          </div>
+          <div class="invalid-feedback-custom">กรุณาระบุสถานที่</div>
+        </div>
+
+      </div>
+    </div><!-- /card NC data -->
+
+    <!-- ══════════ SECTION 2: CORRECTION DATA ══════════ -->
+    <div class="card">
+      <div class="card-header-custom">
+        <div class="icon-box" style="background:var(--success)"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+        <h5>ข้อมูลการแก้ไข</h5>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+          <div class="round-badge"><i class="fa-solid fa-rotate-right"></i> รอบที่ <span id="roundNumDisplay">1</span></div>
+          <div class="date-display"><i class="fa-regular fa-calendar me-1"></i>วันที่: <span id="submittedDateDisplay">—</span></div>
+        </div>
+      </div>
+      <div class="card-body-custom">
+
+        <div class="row g-3 form-group-mb">
+          <div class="col-md-4">
+            <label class="form-label">รอบการแก้ไข</label>
+            <select class="form-select" id="roundSelect" onchange="onRoundChange()">
+              <option value="0">บันทึกข้อมูลใหม่</option>
+              <option value="1">รอบที่ 1</option>
+              <option value="2">รอบที่ 2</option>
+              <option value="3">รอบที่ 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="note-alert mb-3">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+          <strong>หมายเหตุ:</strong> อักขระพิเศษทุกตัว กรุณาเลือกจากฟังก์ชัน
+          <kbd style="background:#fff;border:1px solid #ccc;padding:1px 5px;border-radius:3px;font-size:11px">Ω</kbd>
+          ใน text editor เท่านั้น <strong>ห้าม copy มาจากแหล่งอื่น</strong>
+        </div>
+
+        <!-- Helper: special char palette -->
+        <div id="specialCharPalette" style="display:none;background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:8px;margin-bottom:12px">
+          <div style="font-size:11px;color:#666;margin-bottom:6px;font-weight:600">อักขระพิเศษ — คลิกเพื่อแทรก:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px" id="charPaletteButtons"></div>
+        </div>
+
+        <div class="section-title" style="margin-top:8px">
+          <i class="fa-solid fa-magnifying-glass-chart"></i> การวิเคราะห์และแก้ไข
+        </div>
+
+        <!-- การขยายผล -->
+        <div class="form-group-mb">
+          <label class="form-label">การขยายผล <span style="font-size:11px;color:#888">(Extent of problem)</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar" id="tb_extent">
+              <button type="button" onclick="fmt2('bold','rte_extent')"><b>B</b></button>
+              <button type="button" onclick="fmt2('italic','rte_extent')"><i>I</i></button>
+              <button type="button" onclick="fmt2('underline','rte_extent')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('insertOrderedList','rte_extent')"><i class="fa-solid fa-list-ol"></i></button>
+              <button type="button" onclick="fmt2('insertUnorderedList','rte_extent')"><i class="fa-solid fa-list-ul"></i></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('subscript','rte_extent')">x<sub>2</sub></button>
+              <button type="button" onclick="fmt2('superscript','rte_extent')">x<sup>2</sup></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('strikeThrough','rte_extent')"><s>S</s></button>
+              <button type="button" onclick="toggleSpecialChar()" title="อักขระพิเศษ"><i class="fa-solid fa-omega"></i></button>
+              <button type="button" onclick="fmt2('removeFormat','rte_extent')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_extent" contenteditable="true"
+              data-placeholder="ระบุการขยายผลของปัญหา ว่าส่งผลกระทบต่อใคร/อะไรบ้าง..."></div>
+          </div>
+        </div>
+
+        <!-- ผลการวิเคราะห์หาสาเหตุ -->
+        <div class="form-group-mb">
+          <label class="form-label">ผลการวิเคราะห์หาสาเหตุ <span style="font-size:11px;color:#888">(Root Cause Analysis)</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" onclick="fmt2('bold','rte_rootcause')"><b>B</b></button>
+              <button type="button" onclick="fmt2('italic','rte_rootcause')"><i>I</i></button>
+              <button type="button" onclick="fmt2('underline','rte_rootcause')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('insertOrderedList','rte_rootcause')"><i class="fa-solid fa-list-ol"></i></button>
+              <button type="button" onclick="fmt2('insertUnorderedList','rte_rootcause')"><i class="fa-solid fa-list-ul"></i></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('subscript','rte_rootcause')">x<sub>2</sub></button>
+              <button type="button" onclick="fmt2('superscript','rte_rootcause')">x<sup>2</sup></button>
+              <div class="sep"></div>
+              <button type="button" onclick="toggleSpecialChar()" title="อักขระพิเศษ"><i class="fa-solid fa-omega"></i></button>
+              <button type="button" onclick="fmt2('removeFormat','rte_rootcause')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_rootcause" contenteditable="true"
+              data-placeholder="ระบุสาเหตุที่แท้จริง (Root Cause) ที่ทำให้เกิดปัญหา..."></div>
+          </div>
+        </div>
+
+        <!-- การแก้ไข -->
+        <div class="form-group-mb">
+          <label class="form-label">การแก้ไข <span style="font-size:11px;color:#888">(Correction)</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" onclick="fmt2('bold','rte_correction')"><b>B</b></button>
+              <button type="button" onclick="fmt2('italic','rte_correction')"><i>I</i></button>
+              <button type="button" onclick="fmt2('underline','rte_correction')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('insertOrderedList','rte_correction')"><i class="fa-solid fa-list-ol"></i></button>
+              <button type="button" onclick="fmt2('insertUnorderedList','rte_correction')"><i class="fa-solid fa-list-ul"></i></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('subscript','rte_correction')">x<sub>2</sub></button>
+              <button type="button" onclick="fmt2('superscript','rte_correction')">x<sup>2</sup></button>
+              <div class="sep"></div>
+              <button type="button" onclick="toggleSpecialChar()" title="อักขระพิเศษ"><i class="fa-solid fa-omega"></i></button>
+              <button type="button" onclick="fmt2('removeFormat','rte_correction')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_correction" contenteditable="true"
+              data-placeholder="ระบุขั้นตอนการแก้ไขที่ดำเนินการไปแล้ว..."></div>
+          </div>
+        </div>
+
+        <!-- การป้องกันการเกิดซ้ำ -->
+        <div class="form-group-mb">
+          <label class="form-label">การป้องกันการเกิดซ้ำ <span style="font-size:11px;color:#888">(Preventive Action)</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" onclick="fmt2('bold','rte_preventive')"><b>B</b></button>
+              <button type="button" onclick="fmt2('italic','rte_preventive')"><i>I</i></button>
+              <button type="button" onclick="fmt2('underline','rte_preventive')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('insertOrderedList','rte_preventive')"><i class="fa-solid fa-list-ol"></i></button>
+              <button type="button" onclick="fmt2('insertUnorderedList','rte_preventive')"><i class="fa-solid fa-list-ul"></i></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('subscript','rte_preventive')">x<sub>2</sub></button>
+              <button type="button" onclick="fmt2('superscript','rte_preventive')">x<sup>2</sup></button>
+              <div class="sep"></div>
+              <button type="button" onclick="toggleSpecialChar()" title="อักขระพิเศษ"><i class="fa-solid fa-omega"></i></button>
+              <button type="button" onclick="fmt2('removeFormat','rte_preventive')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_preventive" contenteditable="true"
+              data-placeholder="ระบุแผนป้องกันไม่ให้ปัญหาเกิดซ้ำในอนาคต..."></div>
+          </div>
+        </div>
+
+        <!-- การประเมินผลกระทบ -->
+        <div class="form-group-mb">
+          <label class="form-label">การประเมินผลกระทบ <span style="font-size:11px;color:#888">(Impact Assessment)</span></label>
+          <div class="rte-wrapper">
+            <div class="rte-toolbar">
+              <button type="button" onclick="fmt2('bold','rte_impact')"><b>B</b></button>
+              <button type="button" onclick="fmt2('italic','rte_impact')"><i>I</i></button>
+              <button type="button" onclick="fmt2('underline','rte_impact')"><u>U</u></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('insertOrderedList','rte_impact')"><i class="fa-solid fa-list-ol"></i></button>
+              <button type="button" onclick="fmt2('insertUnorderedList','rte_impact')"><i class="fa-solid fa-list-ul"></i></button>
+              <div class="sep"></div>
+              <button type="button" onclick="fmt2('subscript','rte_impact')">x<sub>2</sub></button>
+              <button type="button" onclick="fmt2('superscript','rte_impact')">x<sup>2</sup></button>
+              <div class="sep"></div>
+              <button type="button" onclick="toggleSpecialChar()" title="อักขระพิเศษ"><i class="fa-solid fa-omega"></i></button>
+              <button type="button" onclick="fmt2('removeFormat','rte_impact')"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="rte-content" id="rte_impact" contenteditable="true"
+              data-placeholder="ประเมินผลกระทบต่อผู้ป่วย/บริการ และระดับความเสี่ยง..."></div>
+          </div>
+        </div>
+
+        <!-- File Attachment -->
+        <div class="form-group-mb">
+          <label class="form-label">เอกสารแนบประกอบ</label>
+          <div class="note-alert mb-2" style="font-size:12px">
+            <i class="fa-solid fa-circle-info me-1"></i>
+            หากมีหลายเอกสารแนบ กรุณา <strong>Zip</strong> ก่อนแนบ
+          </div>
+          <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.zip,.jpg,.png" onchange="handleFileSelect(this)">
+            <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+            <div style="font-size:13px;color:#666">คลิกหรือลากไฟล์มาวางที่นี่</div>
+            <div style="font-size:11px;color:#aaa;margin-top:4px">PDF, Word, ZIP, JPG, PNG</div>
+          </div>
+          <div id="uploadProgress" style="display:none;margin-top:8px">
+            <div class="progress" style="height:5px;border-radius:3px">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div>
+            </div>
+            <div style="font-size:11px;color:#888;margin-top:3px"><i class="fa-solid fa-spinner fa-spin me-1"></i>กำลังอัพโหลด...</div>
+          </div>
+          <div class="file-name-display" id="fileNameDisplay">
+            <i class="fa-solid fa-paperclip me-1"></i><span id="fileNameText"></span>
+            <a id="fileUrlLink" href="#" target="_blank" rel="noopener"
+               style="font-size:11px;margin-left:6px;color:var(--primary);display:none">
+              <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>ดูไฟล์
+            </a>
+            <button type="button" onclick="clearFile()" style="border:none;background:none;color:var(--danger);cursor:pointer;margin-left:8px"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <input type="hidden" id="uploadedFileUrl" value="">
+        </div>
+
+        <!-- View existing doc link -->
+        <div class="mb-3" id="viewDocSection" style="display:none">
+          <label class="form-label">ดูเอกสารที่แนบ:</label>
+          <a href="#" id="viewDocLink" target="_blank" rel="noopener" style="font-size:13px;color:var(--primary)">
+            <i class="fa-solid fa-file-arrow-down me-1"></i>ดาวน์โหลด / ดูไฟล์ที่แนบ
+          </a>
+        </div>
+
+      </div>
+    </div><!-- /card Correction data -->
+
+    <!-- ══════════ ACTION BUTTONS ══════════ -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0 24px">
+      <a href="#" class="btn-secondary-custom">
+        <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
+      </a>
+      <div style="display:flex;gap:10px">
+        <button type="button" class="btn-primary-custom" onclick="saveDraft()">
+          <i class="fa-solid fa-floppy-disk"></i> บันทึกฉบับร่าง
+        </button>
+        <button type="button" class="btn-success-custom" onclick="openSubmitModal()">
+          <i class="fa-solid fa-paper-plane"></i> ส่งการแก้ไขให้ผู้ตรวจ
+        </button>
+      </div>
+    </div>
+
+  </form>
+</div><!-- /main-content -->
+
+
+<!-- ═══════════════════ MODAL: Submit Confirmation ═══════════════════ -->
+<div class="modal fade" id="modalSubmit" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:10px;border:none;overflow:hidden">
+      <div class="modal-header-custom">
+        <h5 class="modal-title"><i class="fa-solid fa-paper-plane me-2"></i>การยืนยันการส่ง</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:20px">
+        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px;margin-bottom:16px;font-size:13px;color:#856404">
+          <i class="fa-solid fa-triangle-exclamation me-2"></i>
+          <strong>คำเตือน:</strong> หลังจากส่งให้ผู้ตรวจพิจารณาแล้ว จะ<strong>ไม่สามารถบันทึกข้อมูลเพิ่มเติมได้อีก</strong>จนกว่าผู้ตรวจจะพิจารณาเสร็จ
+        </div>
+        <p style="font-size:13.5px;color:#333">ยืนยันการส่งข้อมูลการแก้ไข NC ให้ผู้ตรวจพิจารณาหรือไม่?</p>
+        <div class="mb-2" style="font-size:13px;color:#555">
+          <i class="fa-solid fa-circle-check me-1" style="color:var(--success)"></i> NC #22971 — <span id="clauseSummary">ISO 15189 ข้อ 7.3.5</span>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:12px 20px;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">
+          <i class="fa-solid fa-xmark"></i> ยกเลิก
+        </button>
+        <button type="button" class="btn-success-custom" onclick="doSubmit()">
+          <i class="fa-solid fa-check"></i> ยืนยัน
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MODAL: Inspector Review ═══════════════════ -->
+<div class="modal fade" id="modalInspector" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:10px;border:none;overflow:hidden">
+      <div class="modal-header-custom" style="background:#27ae60">
+        <h5 class="modal-title"><i class="fa-solid fa-user-check me-2"></i>การยืนยัน (ผู้ตรวจ)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:20px">
+        <p style="font-size:13.5px;font-weight:600;color:#333;margin-bottom:14px">
+          <i class="fa-solid fa-clipboard-check me-2" style="color:#27ae60"></i>พิจารณายอมรับการแก้ไข NC
+        </p>
+        <div class="mb-3">
+          <label class="form-label">ข้อเสนอแนะเพิ่มเติม</label>
+          <textarea class="form-control" rows="4" id="inspectorComment"
+            placeholder="ระบุข้อเสนอแนะหรือเหตุผลประกอบการพิจารณา (ถ้ามี)..." style="font-size:13px"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding:12px 20px;gap:8px">
+        <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">
+          <i class="fa-solid fa-xmark"></i> ปิด
+        </button>
+        <button type="button" class="btn-danger-custom" onclick="rejectNC()">
+          <i class="fa-solid fa-thumbs-down"></i> ไม่ยอมรับ
+        </button>
+        <button type="button" class="btn-success-custom" onclick="acceptNC()">
+          <i class="fa-solid fa-thumbs-up"></i> ยอมรับการแก้ไข
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TOAST ═══════════════════ -->
+<div class="toast-custom" id="toastMsg">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="toastText">บันทึกสำเร็จ</span>
+</div>
+
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════ CONFIG ═══════
+// ⚠️  แทนที่ค่า YOUR_* ด้วยค่าจริง
+const SUPABASE_URL      = 'https://fslagsuorkcckvvtrmyi.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_xgWZXuJtuv4f3hWREfltjg_AGA8dkNY';
+const R2_WORKER_URL     = 'YOUR_R2_WORKER_URL';       // https://upload.xxx.workers.dev
+
+// ═══════ NC DATA (จาก รายการข้อบกพร่อง.xlsx) ═══════
+const NC_DATA = [
+  {id:1,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.5 Biological reference intervals and clinical decision limits`,problem:`<p>1.    พบค่าอ้างอิงที่ใช้ในระบบ HIS ไม่สอดคล้องกับเอกสารกำกับน้ำยา และไม่พบบันทึกการหาค่าอ้างอิง โดยน้ำยา Lot.นี้ได้เปิดใช้ตั้งแต่ กพ.2569 เช่น1.1    PT lot 576503A ค่าอ้างอิงในระบบ HIS = 10.6-13.5 Sec.  ตามเอกสารกำกับน้ำยา = 9.8-12.1 Sec.  1.2    PTT lot 562488A ค่าอ้างอิงในระบบ HIS = 21.6-30.4 Sec.  ตามเอกสารกำกับน้ำยา = 22.1-28.3 Sec.  2.    ใบรายงานผล 26-155-3-0239 ค่าอ้างอิง AFP =0-13.6 ng/ml ในเอกสารกำกับน้ำยา ≤ 7 ng/ml3.    ใบรายงานผล26-155-3-0215 ค่าอ้างอิง CEA = 0-5 ng/ml ในเอกสารกำกับน้ำยา =0-4.7 ng/ml4.    ใบรายงานผล26-155-3-0100 ค่าอ้างอิง TPSA = 0-4 ng/ml ในเอกสารกำกับน้ำยา =0-4.4 ng/ml อ้างอิงตามอายุ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:2,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`8.3 Control of management system documents`,problem:`<p>เอกสารแนบรายการทดสอบที่ขอการรับรอง กว.1 มีรายละเอียดไม่ครบถ้วนและไม่สอดคล้องกับวิธีปฏิบัติ เช่น1.    CBC  ไม่ระบุชื่อเครื่องมือที่ใช้ Mindray CAL 6000 (BC 6200, MC-80 และ BC 120 ที่ Central lab และ BC6200 + เครื่องย้อมสี Wellgate ที่ ศสม.)  และ การดู Blood Smear ด้วยกล้องจุลทรรศน์2.    Urinalysis  ไม่ได้ระบุการดูตะกอนปัสสาวะด้วยกล้องจุลทรรศน์และเครื่องตรวจตะกอนปัสสาวะ UriSed mini (ศสม.)</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:3,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.6 Documentation of examination procedures`,problem:`<p>วิธีปฏิบัติงานทางโลหิตวิทยา มีรายและละเอียดไม่ครบถ้วนไม่ถูกต้องและไม่สอดคล้องกับเอกสารอื่นที่เกี่ยวข้อง  เนื่องจากใช้งานที่ Central lab และ ศสม.เช่น1.    WI-T-HE01  CBC RV 10 1.1    หน้า 9/19 ข้อ 12.1.1 , 12.1.2  และ WI-G-HE03 RV10  หน้า 2/8 ข้อ 10.1 ไม่พบการระบุ การเก็บรักษาและอายุการใช้งานของ Control CBC-6D1.2    หน้า 9/19 ข้อ 12.3.2 ระบุการประเมินคุณภาพการตรวจวิเคราะห์ สาขาโลหิตวิทยา อย่างน้อย 3 ครั้งต่อปี แต่ไม่พบการระบุหน่วยงานที่เข้าร่วม1.3    ไม่พบแนวทางปฏิบัติในการตรวจวิเคราะห์ CBC ในกรณีที่ต้องไถ slide และย้อมสีแบบ manual2.    WI-E-HE01 การใช้และการบำรุงรักษาเครื่อง Mindray CAL6000 RV05 หน้า 2/89 ข้อ 2.1 ระบุเครื่อง BC 6200  จำนวน 2 เครื่อง ส่วนหน้า 16/89 ข้อ 9.1.2 ระบุเครื่อง BC 6200  จำนวน 4 เครื่อง ที่ Central Lab และ 1 เครื่องที่ ศสม.3.    WI-T-HE03 PT  RV 10 3.1    หน้า 5/7 3.1.1    ข้อ 10.1 ไม่พบรายละเอียดปริมาตรของเลือดที่ใช้หรืออัตราส่วนเลือดต่อAnticoagulant 3.1.2    ข้อ 10.3 ไม่พบการเก็บรักษาและอายุการใช้งานของน้ำยา Thromborel S หลังละลาย3.1.3    ข้อ 12.1 ไม่พบความถี่ในการทำ IQC รวมทั้งไม่พบการระบุใน WI-G-HE03 RV10  หน้า 3/8 ข้อ 10.4.1.1 และ 10.4.1.23.2    หน้า 6/7 ข้อ 14.2.1 ค่าอ้างอิง3.2.1    ตามค่าที่ระบุในระบบสารสนเทศ เนื่องจากเปลี่ยนตาม lot น้ำยา ไม่พบแนวปฏิบัติในกรณีที่เปลี่ยน lot ว่ามีการทวนสอบค่าอ้างอิงในระบบอย่างไรว่าเป็นค่าปัจจุบันที่ใช้งานหรือใครเป็นผู้รับผิดชอบในการ update ค่าให้เป็นปัจจุบันตาม lot น้ำยาที่ใช้งาน3.2.2    จากการสัมภาษณ์เจ้าหน้าที่แจ้งว่าค่าอ้างอิงทางห้องปฏิบัติการหาค่าเองจากตัวอย่างตรวจปกติ 40 รายแต่ไม่พบเอกสารบันทึกรวมทั้งไม่ได้เขียนวิธีปฏิบัติ4.     WI-E-HE04 APTT  RV 10 4.1    หน้า 5/7 4.1.1    ข้อ 10.1 ไม่พบรายละเอียดปริมาตรของเลือดที่ใช้หรืออัตราส่วนเลือดต่อanticoagulant 4.1.2    ข้อ 10.2 ไม่พบการเก็บรักษาและอายุการใช้งานของน้ำยา CaCl4.1.3    ค่าอ้างอิงเช่นเดียวกับ PT5.    การทดสอบ PT และ APTT มีการใช้เครื่องตรวจ 2 เครื่อง (Sysmex CS1600 และ CS2500) ไม่พบการระบุแนวปฏิบัติในการใช้เครื่องมือแต่ละเครื่องในการตรวจวิเคราะห์ เช่น เครื่องใดเป็นเครื่องหลักหรือเครื่องสำรอง6.    WI-T-HE03 PT  RV 10 และ WI-E-HE04 APTT  RV 10 ข้อ 10.1.1 ปั่นแยกพลาสมาด้วยความเร็ว 3500 รอบต่อนาที  นาน 10 นาที หรือ 8270 รอบต่อนาที  (7000 g) นาน 1 นาที  ส่วน WI-T-HE09  D-Dimer  RV 10 ปั่นแยกพลาสมาด้วยความเร็ว 3500 รอบต่อนาที  นาน 10 นาที ไม่สอดคล้องกับเอกสารกำกับน้ำยา ให้ใช้ความเร็ว 1500-2500 g/นาที นาน 15  นาที7.    WI-T-HE09  D-Dimer  RV 10 หน้า 4-5/6 ข้อ 10.3 ไม่พบการเก็บรักษาและอายุการใช้งานของน้ำยาหลังเตรียม</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:4,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.6 Documentation of examination procedures`,problem:`<p>WI-T-CC37 , 39 , 41 , 62 , 63 1.1    ข้อ 9.1 Calibrators และ ข้อ 12.1.1 IQC ไม่พบวิธีการเตรียม การเก็บรักษาและอายุการใช้งาน และ/หรือไม่พบการอ้างอิงไปที่ WI-G-CC02 RV 13 1.2    ไม่พบค่าอ้างอิง</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:5,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.4 Evaluation of measurement uncertainty (MU)`,problem:`<p>1. บันทึกการทำ MU ของเครื่อง BC 6200 SN.TW-4B004235 , TW-4B004236 , TW-4B004242 TW-4B004243  ประจำปี 2568 (IQC lot 0325) - ไม่พบการระบุเดือนที่จัดทำ- ระยะเวลาที่นำข้อมูลมาใช้ในการคำนวณ- ไม่พบบันทึกสรุปผลว่าผ่านเกณฑ์ที่ยอมรับหรือไม่-ไม่พบชื่อผู้ทำและ/หรือผู้ทวนสอบ 2. บันทึก MU CS 1600 และ CS 2500 Date 23 Mar 2026 และ 16 JUN 20262.1 ไม่พบใบสรุปผล2.2 ไม่พบชื่อผู้จัดทำและผู้ทบทวน2.3 ไม่พบรหัสเอกสาร2.4 บันทึก MU  Date  16  JUN  2026 ไม่ได้ทบทวนวันที่ที่จัดทำให้ถูกต้อง3. บันทึก MU AFP , CEA , TPSA , CA125 , CA199 ใช้ข้อมูล มีค.-เมย.693.1 ไม่พบรหัสเอกสาร3.2 ชื่อเครื่องมือและ SN.3.3 วันที่จัดทำ  ผู้จัดทำและผู้ทบทวน4. บันทึก MU FT3 , FT4 , TSH , Pro BNP , Trop T hs ใช้ช้อมูล มค.-กพ.694.1 ไม่พบรหัสเอกสาร4.2 ไม่พบ SN.5. ไม่พบบันทึก MU ของเครื่อง e801 SN.2053-026.ไม่พบวิธีปฏิบัติงานในการทำ MU เครื่องตรวจวิเคราะห์ทางด้านอิมมูโนวิทยา</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:6,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.2.4.4 Instructions for collection activities`,problem:`<p>1.    Ward ศัลยกรรมและอุบัติเหตุชาย พบว่า user name และ password พยาบาลไม่สามารถเข้าถึงระบบคอมพิวเตอร์เพื่อดูเอกสาร MN-LAB-01 คู่มือการใช้บริการห้องปฏิบัติการ ปี 2569 ได้2.    ไม่พบ card file ลำดับการใส่เลือดในหลอดเก็บตัวอย่างตรวจชนิดต่างๆ ที่จุดเจาะเลือด OPD ชั้น G3.    ไม่พบ card file วิธีการเก็บปัสสาวะในห้องน้ำชั้น G</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:7,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.3 Validation of examination methods`,problem:`<p>1.    ไม่พบบันทึกการทำ Validation ของสีย้อม Wright stain  BASO ที่มีการนำมาใช้ในเครื่องย้อม slide CBC ของเครื่อง Mindray BC 120 โดยมีการเปลี่ยนระยะเวลาในการย้อมสีจาก 1 นาทีเป็น 2 นาทีและ Buffer จาก 3-4 นาทีเป็น 1.5 นาที2.    Method Validation LabUMat 2 &amp; UriSed 3 PRO 20-27 เมย.และ ธค. 2566 ไม่พบชื่อผู้จัดทำและผู้อนุมัติ3.    Method Validation LabUMat 2 &amp; LabU Reader Plus 2 ไม่พบวันที่จัดทำ ชื่อผู้จัดทำและผู้อนุมัติ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:8,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`6.5 Equipment calibration and metrological traceability`,problem:`<p>1.    พบเครื่องมือสอบเทียบโดยบริษัทที่ไม่ได้รับการรับรองมาตรฐาน ISO 17025 เช่น1.1    Dr. Calibration1.1.1    VORTEX MIXER SN. E18111UC0004 1.1.2    ROTATOR SN.9714142 , 702005 , 307691 , 01015219030138 , 0106551.1.3    HEATING BLOCK SN.R000101509 , 32661069 , 326610491.2    BioPlus1.2.1    BSC II  SN.2017-114940 , 2022-185551 , 2017-114936 , 2021-170984 , 2016-112298 , 2019-13700 , 2016-112297 , 5197461.2.2    Fume Hood SN.2008-364311.2.3    Hood Table SN.561141.2.4    BSC II SN.57111 (ที่ ศสม.)1.2.5    Fume hood ISSCOTHAI รุ่น VT-12388 (ที่ ศสม.)2.    พบการสอบเทียบเครื่องมือไม่ครอบคลุมจุดที่ใช้งาน เช่น2.1    Centrifuge BOECO SN.0000315 ใช้ปั่นปัสสาวะที่ความเร็ว 1500-2000 rpm.เป็นเวลา 5 นาที สอบเทียบที่ความเร็วรอบ 3500 และ 4000 rpm. เวลา 10 นาที2.2    Centrifuge BOECO 6515-014-2028/4/51 ใช้ปั่นตัวอย่างที่-    ความเร็ว 1500 rpm.เป็นเวลา 5 นาที -    ความเร็ว 2500 rpm.เป็นเวลา 15 นาที-    ความเร็ว 4000 rpm.เป็นเวลา 5 นาที-    ความเร็ว 4000 rpm.เป็นเวลา 10 นาทีสอบเทียบที่ความเร็วรอบ 2000 และ 4000 rpm. เวลา 10 นาที</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:9,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`8.3.2 Control of documents`,problem:`<p>เอกสารไม่ได้ทบทวน เช่น1.    WI-G-OV05 การจัดทำเอกสารคุณภาพ RV 06 ปกหน้าอนุมัติโดย นางนฤมล งามวชิราพร หน้าประวัติ อนุมัติโดย นส.ณัฎฐ์ฤทัย ไพโรจน์2.    WI-G-OV01 RV 102.1     ปกหน้าอนุมัติโดย นส.ณัฎฐ์ฤทัย ไพโรจน์ หน้าประวัติ อนุมัติโดย นางนฤมล งามวชิราพร2.2    หน้า 9/18 ข้อ 10.5.2 และ 10.5.3 ชื่อเอกสารเหมือนกัน “ใบนำส่งตรวจกรณีระบบสารสนเทศขัดข้องงานจุลชีววิทยาคลินิก&quot;  ใช้รหัสเอกสารต่างกัน คือ Fm-WI-G-OV01/04 และ Fm-WI-G-OV01/053.    WI-G-OV01  RV 10 และ WI-G-OV02 RV 09 ปกหน้าอนุมัติโดย นส.ณัฎฐ์ฤทัย ไพโรจน์ หัวหน้ากลุ่มงานเทคนิคการแพทย์ ไม่สอดคล้องกับ WI-G-OV05 RV 06 หน้า 6/30 ข้อ 5.2.1.11 ระบุว่า WI อนุมัติโดยผู้จัดการคุณภาพ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:10,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.2.4.2 Information for pre-collection activities`,problem:`<p>MN-LAB-01 คู่มือการใช้บริการห้องปฏิบัติการ ปี 2569 มีรายละเอียดไม่ครบถ้วนและไม่พบการอ้างอิงไปยังเอกสารที่เกี่ยวข้อง เข่น1.    ไม่พบช่องทางการร้องเรียน2.    ไม่พบวิธีการเก็บรักษาตัวอย่างตรวจก่อนนำส่งห้องปฏิบัติการ3.    ไม่พบระยะเวลาในการเพิ่ม lab จากตัวอย่างเดิม (มีการเขียนใน WI-G-OV02 การส่งตรวจด้วยวาจา หน้า 4/6 ข้อ 15 แต่ไม่พบการอ้างอิง)</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:11,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`6.3.5 Sample collection facilities`,problem:`<p>จุดเจาะเลือด OPD จุดที่ 10 ที่ชั้น G สำหรับเจาะเลือดรถนั่งหรือเปลนอน อยู่บริเวณทางเดิน โดยไม่มีฉากกั้น เป็นพื้นที่ที่ไม่เป็นสัดส่วนและไม่เป็นส่วนตัว</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:12,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`8.3.2 a)`,problem:`<p>WI-E-HE04  APTT RV10  และ WI-E-HE09  D-Dimer RV10 เป็นวิธีปฏิบัติงานของการทดสอบ แต่ใช้รหัสเป็น “E” ไม่สอดคล้องกับที่ระบุไว้ใน WI-G-OV05 การจัดทำเอกสารคุณภาพ หน้า 22/30 ลำดับที่ 8 ระบุว่า E เป็นหมวดของเอกสารที่เกี่ยวกับเครื่องมือ ถ้าเป็นการทดสอบใช้ “T” และไม่สอดคล้องกับรหัสเอกสาร WI-T-HE03  PT RV10 ที่ใช้เป็น T</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:13,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`6.2.2 Competence requirements`,problem:`<p>1.    พบเจ้าหน้าที่ห้องเจาะเลือด OPD ชั้น G ไม่สามารถเข้าถึง MN-LAB-01 คู่มือการใช้บริการห้องปฏิบัติการ ปี 2569 ในระบบคอมพิวเตอร์2.    บันทึกการประเมิน Competency ของบุคลากรห้องปฏิบัติทางโลหิตวิทยาและจุลทรรศนศาสตร์ ไม่พบการขึ้นทะเบียนเอกสารคุณภาพ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:14,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.7.4 Comparability of examination results`,problem:`<p>1.    บันทึก รายงานผลการหาความสัมพันธ์ของการทดสอบ PT และ PTT โดยเครื่อง CS 1600 SN.13104 และ CS2500 SN.21199 ประจำปี 2568   ไม่พบชื่อผู้จัดทำและผู้ทบทวน2.    ไม่พบบันทึกการทำ Correlation ระหว่างเครื่อง Mindray MC 80 (เครื่องการ slide CBC) กับ วิธี manual ด้วยการดูกล้องจุลทรรศน์ ที่ Central lab3.    ไม่พบบันทึกการทำ Correlation ระหว่างเครื่อง Urised mini (เครื่องอ่าน Sediment ในปัสสาวะ) กับ วิธี manual ด้วยการดูกล้องจุลทรรศน์ ที่ ศสม.</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:15,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`8.3.2 c)`,problem:`<p>พบเอกสารไม่ได้ปรับปรุงให้เป็นปัจจุบัน (ปัจจุบันผู้อำนวยการโรงพยาบาล นายนำพล แดนพิพัฒน์)  เช่น1.    HP-SQE-CBH-001  บังคับใช้ 1 มีค.2562  นายสวรรค์ ขวัญใจพานิช   ผู้อำนวยการโรงพยาบาล2.    HP-SQE-CBH-002  บังคับใช้ 1 สค.2566นางจิรวรรณ อารยะพงษ์  ผู้อำนวยการโรงพยาบาล3.    HP-SQE-CBH-003  บังคับใช้ 1 สค.2562  นายสวรรค์ ขวัญใจพานิช   ผู้อำนวยการโรงพยาบาล4.    HP-SQE-CBH-004  บังคับใช้ 1 ตค.2566นางจิรวรรณ อารยะพงษ์   ผู้อำนวยการโรงพยาบาล5.    HP-SQE-CBH-007  บังคับใช้ 2 เมย.2563  นายสวรรค์ ขวัญใจพานิช   ผู้อำนวยการโรงพยาบาล6.    HP-SQE-CBH-011  บังคับใช้  1 กย.2565 นางจิรวรรณ อารยะพงษ์   ผู้อำนวยการโรงพยาบาล</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:16,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.4.1.8 Amendments to reported results`,problem:`<p>จากการสุ่มตรวจใบรายงานผลที่มีการแก้ไข LAB NO.2615310488 มีรายละเอียดไม่สอดคล้องกับข้อกำหนด เช่น1.    ไม่พบการระบุในใบรายงานผลฉบับใหม่ว่าเป็นรายงานผลฉบับแก้ไข2.    ไม่พบการระบุสาเหตุการแก้ไข3.    ไม่พบการระบุผู้รับแจ้ง ผู้แจ้ง วันที่เวลา4.    ไม่พบผลตรวจวิเคราะห์เดิมและ/หรือใบรายงานผลฉบับเก่า</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:17,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`6.6.7 Reagents and consumables — Records`,problem:`<p>1.    พบ Control เครื่อง CBC ที่เปิดใช้ไม่ระบุวันหมดอายุ ซึ่งจะแตกต่างจากวันหมดอายุข้างหลอด2.    น้ำยา HANDI-C ที่จุดเจาะเลือด OPD ชั้น G ไม่ระบุวันที่เปิดใช้และวันหมดอายุ3.    Ward ศัลยกรรมและอุบัติเหตุชาย พบการนำเข็มเจาะเลือดปลายนิ้วเทใส่ตะกร้าพลาสติคโดยไม่มีการติดป้ายวันเปิดใช้และวันหมดอายุ จากการสอบถามเจ้าหน้าที่ เมื่อเข็มใกล้หมดจะมีการเทของใหม่เติม มีความเสี่ยงในการใช้เข็มที่หมดอายุ4.    จุดเจาะเลือด OPD ชั้น G พบการนำเข็มเจาะเลือดปลายนิ้ว ใส่ในกล่องเข็มอื่น ทำให้ไม่สามารถตรวจสอบวันหมดอายุได้</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:18,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.7.2 Internal quality control (IQC)`,problem:`<p>พบผล IQC ของเครื่อง e801 SN. 4572-03 ออกนอกเกณฑ์การยอมรับแต่ไม่พบบันทึกการหาสาเหตุและแก้ไข เช่น1.    Random error : FT4 วันที่ 25 และ 30 พค.ออกนอกเกณฑ์ ±2SD2.    Systemic error2.1    CA125 วันที่ 8 พค.- 4 มิย. ค่า lab mean shift ไปอยู่ที่ -1SD2.2    CA199 วันที่ 24 เมย.- 26 มิย. ค่า lab mean shift ไปอยู่ระหว่าง +1SD และ 2SD2.3    TSH วันที่ 22 พค.- 4 มิย. ค่า lab mean shift ไปอยู่ที่ -1SD</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:19,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.6 Documentation of examination procedures`,problem:`<p>1.    WI-T-MP09 RV 12 , WI-E-MP05 RV 02 , WI-E-MP06 RV 02 และ WI-E-MP07 RV 02 เป็นวิธีปฏิบัติงานการตรวจปัสสาวะ พบข้อ 7.2 เขียนเกี่ยวกับ Blood Collection Technique 2.    WI-T-MP09 RV 12 2.1    หน้า 7/11 ข้อ 10.2 ชื่อเครื่อง LabU Reader Plus 2 ข้อ 12.1 ชื่อเครื่อง LabU Reader 2  Pro ซึ่งเป็นเครื่องเก่า2.2    ข้อ 12.1 IQC Liquichek urine Level 1 และ 2 ไม่พบวิธีการเตรียม การเก็บรักษาและอายุการใช้งาน2.3    หน้า 8/11 ข้อ 14.2.1 ค่าอ้างอิงตามระบุในสารสนเทศ ไม่พบการอ้างอิงของที่มาของค่าที่นำมาใช้งาน2.4    เนื่องจากที่ ศสม.มีการตรวจ UA โดยใช้ WI ฉบับเดียวกัน แต่มีขั้นตอนวิธีปฏิบัติที่ต่างกัน รวมทั้งเครื่องอ่านตะกอนปัสสาวะที่ใช้ต่างกัน UriSed mini ใน WI ไม่พบวิธีปฏิบัติ3.    WI-E-MP05 RV 02 ปกหน้า นายวรวุฒิ วงษ์เจริญผล ตำแหน่งรักษาการหัวหน้างานจุลทรรศน์ ใน WI-E-MP07 RV 02 ตำแหน่งหัวหน้างานจุลทรรศน์ ซึ่งเป็นเอกสารที่ประกาศใช้พร้อมกัน4.    WI-E-MP07 LabU Reader 2 Pro RV 024.1    ปกหน้า มีจำนวนหน้า 13  หัวกระดาษด้านในเนื้อหา มีจำนวนหน้า 124.2    หน้า 4/12 4.2.1    ข้อ 8.3 , 8.4 ใช้ rack LabU Mat 2 และ  Urised 3 Pro ซึ่งเครื่องตรวจนี้ใช้จุ่ม strip แบบ manual4.2.2    ข้อ 9.1.1 สารมาตรฐานใช้ LabU Mat2 ไม่ตรงกับเครื่องมือที่ใช้งาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:20,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15189`,clause:`7.3.7.3 External quality assessment (EQA)`,problem:`<p>1.    ไม่พบบันทึกสรุปผล EQA ทางโลหิตวิทยาว่าผ่านเกณฑ์หรือไม่2.    EQA ของเครื่อง  LabUMat2 ,  LabU Reader 2 Pro (Strip) และ Urised 3 Pro (Sediment) ทำการทดสอบกับคณะเทคนิคการแพทย์ มหาวิทยาลัยเชียงใหม่ ซึ่งไม่ได้รับการรับรองมาตรฐาน ISO 170433.    ไม่พบบันทึกการสรุปผล EQA RIQAS ของเครื่อง CS1600 และ CS2500 Cycle 18 Sample 4 ว่าผ่านตามเกณฑ์ที่กำหนดหรือไม่4.    ไม่พบบันทึก EQA ของการทดสอบ AFP , CEA , CA 125 , CA199 , TPSA ของเครื่อง e 801 SN.2053-02  </p>`,status:`รอการบันทึกแก้ไข`},
+  {id:21,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`6.2.3 a) Authorization`,problem:`<p>คู่มือคุณภาพกลุ่มงานเทคนิคการแพทย์ โรงพยาบาลชลบุรี QM-LAB-01 แก้ไขครั้งที่ 09 วันที่บังคับใช้ 25 กุมภาพันธ์2569 หน้า23/38 ข้อ 6.3.2 ระบุว่า ผู้จัดการวิชาการหรือนักเทคนิคการแพทย์ที่ได้รับมอบหมาย คัดเลือก พัฒนา ดัดแปลง สอบทวน และทวนสอบวิธีการทดสอบ หรือเครื่องมือที่มีผลต่อคุณภาพการตรวจวิเคราะห์ทางห้องปฏิบัติการ แต่ไม่พบระบุอำนาจหน้าที่ดังกล่าวในใบกำหนดหน้าที่งาน/คำสั่งแต่งตั้งฯ/บันทึกข้อความ/อื่นๆให้สอดคล้องกัน รวมถึงควรเพิ่มการมอบอำนาจหน้าที่ดังกล่าวให้กับบุคลากรอื่นๆที่เหมาะสม ได้แก่ หัวหน้ากลุ่มงานฯ รองหัวหน้ากลุ่มงานฯ หัวหน้างานฯ เป็นต้น</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:22,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`6.8.3 Review and approval of externally provided products and services`,problem:`<p>1) ไม่พบข้อมูล/หลักฐานที่ใช้ทำการประเมินในแบบประเมินผู้ขายสินค้าและบริการจากภายนอก (หลังใช้งาน) (Fm-QP-LAB-04/02) 2) พบว่าการประเมินห้องปฏิบัติการตรวจต่อระหว่างการใช้บริการประจำปี ไม่ได้ใช้แบบบันทึกประเมินคัดเลือกห้องปฏิบัติการตรวจต่อ(ภาคเอกชน) (Fm-QP-LAB03/02) หรือแบบบันทึกประเมินคัดเลือกห้องปฏิบัติการตรวจต่อ(ภาครัฐบาล) (Fm-QP-LAB-03/03) หรือ แบบประเมินการบริการอื่นๆ (Fm-QP-LAB-03/04) ตามที่ระบุใน การประเมินและการคัดเลือกห้องปฏิบัติการที่รับตรวจต่อและที่ปรึกษา QP-LAB-03 แก้ไขครั้งที่ 17 วันที่บังคับใช้ 8 มีนาคม 2569 (นำแบบประเมินผู้ขายสินค้าและบริการจากภายนอก (หลังใช้งาน) (Fm-QP-LAB-04/02) มาใช้ประเมิน) รวมถึงควรทบทวนชื่อแบบฟอร์ม Fm-QP-LAB03/02, Fm-QP-LAB-03/03, Fm-QP-LAB-03/04 ให้สอดคล้องกับการใช้งาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:23,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`4.1 d) Impartiality`,problem:`<p>พบว่ามีการให้บุคคลกรบางคน(ได้แก่ บุคคลกรที่ทราบว่าเปิดคลินิกฯส่วนตัว) จัดทำแบบบันทึกการยินยอมเปิดเผยกิจกรรมอาจบั่นทอนความเชื่อมั่นในความสามารถ ความยุติธรรม ความ ซื่อสัตย์ (Fm-QP-LAB-27/02) ทั้งนี้การติดตามกิจกรรมที่ทำหรือเปิดเผยกิจกรรมนอกเหนือจากการปฏิบัติงานประจำในกลุ่มงานเทคนิคการแพทย์ที่อาจมีผลประโยชน์ทับซ้อน/ผลกระทบต่อความเป็นกลาง ควรสำรวจบุคลากรทุกคนในกลุ่มงานฯ และควรมีการติดตามตรวจสอบความสัมพันธ์ของบุคลากรภาย ซึ่งอาจมีผลประโยชน์ทับซ้อน/ผลกระทบต่อความเป็นกลางด้วย รวมถึงควรเพิ่มเนื้อหาแนวทางและความถี่ในการติดตามฯให้ชัดเจนในQP-LAB-27 การไม่ไปเกี่ยวข้องในกิจกรรมที่ลดความเชื่อมั่นในความสามารถความเป็นกลาง ความซื่อสัตย์ ความยุติธรรม</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:24,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`8.9 Management reviews`,problem:`<p>ไม่พบการดำเนินการประชุมทบทวนระบบบริหารคุณภาพห้องปฏิบัติการในรอบปีที่ผ่านมา ตามที่ระบุในการทบทวนบริหาร QP-LAB-11 แก้ไขครั้งที่ 09 วันที่บังคับใช้ 8 มีนาคม 2569 (ข้อ 5 ระเบียบปฏิบัติงาน)</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:25,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`8.4 Control of records`,problem:`<p>1) คู่มือคุณภาพกลุ่มงานเทคนิคการแพทย์ โรงพยาบาลชลบุรี QM-LAB-01 แก้ไขครั้งที่ 09 วันที่บังคับใช้ 25 กุมภาพันธ์2569 หน้า 35/38 ข้อ 8.4 อ้างอิง QP-LAB-01 การควบคุมเอกสาร ซึ่งไม่ถูกต้อง 2) การควบคุมบันทึกQP-LAB-08 แก้ไขครั้งที่ 11 วันที่บังคับใช้ 8 มีนาคม 2569 พบว่า - ระยะเวลาจัดเก็บบันทึกในตารางที่ 1 ข้อ 5.4  ไม่สอดคล้องกับ นโยบายการรับรองความสามารถห้องปฏิบัติการทดสอบด้านการแพทย์และสาธารณสุข R 07 15 001แก้ไขครั้งที่ 28 วันที่ออกเอกสาร11 พ.ค. 2569 (ข้อ 7.14 เก็บรักษาเอกสารที่เกี่ยวกับระบบคุณภาพ และสำเนาผลการทดสอบไว้ไม่น้อยกว่า 5 ปี เพื่อให้ สำนักตรวจสอบย้อนกลับได้ทั้งนี้ห้องปฏิบัติการสามารถเก็บเอกสารดังกล่าวในรูปแบบสื่อที่หลากหลาย เช่น เป็นกระดาษ หรือดิจิตอล) - การตรวจสอบและการทบทวนบันทึก ที่ระบุในข้อ 5.3.1 และ5.3.2 อาจไม่สอดคล้องกับการปฏิบัติจริงทุกบันทึก - ไม่พบจัดทำบันทึกลงในแบบบันทึกการทำลายเอกสาร (Fm-QP-LAB-08/02) เพื่อขออนุมัติในการทำลายบันทึกจากผู้จัดการคุณภาพ ตามที่ระบุในข้อ 5.6.1</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:26,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`5.5 Objectives and policies`,problem:`<p>พบว่า นโยบายคุณภาพ ที่ระบุในข้อ 5.5 หน้า17/38 ของคู่มือคุณภาพกลุ่มงานเทคนิคการแพทย์ โรงพยาบาลชลบุรี QM-LAB-01 แก้ไขครั้งที่ 09 วันที่บังคับใช้ 25 กุมภาพันธ์2569 ไม่ตรงกับประกาศนโยบายคุณภาพ ห้องปฏิบัติการเทคนิคการแพทย์และพยาธิวิทยาคลินิก วันที่ 25 เดือนกุมภาพันธ์พ.ศ. 2569 </p>`,status:`รอการบันทึกแก้ไข`},
+  {id:27,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`8.3.2 Control of documents`,problem:`<p>1)การควบคุมเอกสาร QP-LAB-01 แก้ไขครั้งที่ 12 วันที่บังคับใช้ 1 มีนาคม 2569 ไม่พบเนื้อหาเกี่ยวกับการจัดเก็บเอกสารควบคุมฉบับยกเลิก ซึ่งตามข้อกำหนด 8.3.2 i) ระบุให้จัดเก็บอย่างน้อยหนึ่งกระดาษหรือสำเนาอิเล็กทรอนิกส์ของเอกสารควบคุมฉบับยกเลิก และเก็บตามระยะเวลาที่กำหนดหรือตามข้อกำหนดที่ระบุที่เกี่ยวข้อง 2)พบการให้รหัสเอกสาร(อักษร) เอกสารฉบับย่อ(Card file) โดยใช้รหัส Rf ซึ่งไม่สอดคล้องกับที่ระบุใน การจัดทำเอกสารคุณภาพ กลุ่มงานเทคนิค การแพทย์ โรงพยาบาลชลบุรี WI-G-OV05 แก้ไขครั้งที่ 06 วันที่บังคับใช้ 5 มีนาคม 2569 3)พบเอกสารฉบับย่อ(Card file) ได้แก่ วิธีปฏิบัติการทำความสะอาดบริเวณพื้นที่ที่มีการหกเลอะของสิ่งติดเชื้อ, การใช้งานเครื่อง Emergency shower and eye washer, คำแนะนำการปัสสาวะ เป็นต้น  ไม่ได้นำเข้าควบคุมตามระบบเอกสารคุณภาพของกลุ่มงานฯ 4)ไม่พบทะเบียนควบคุมเอกสาร ประเภทเอกสารสนับสนุน Supporting Document ได้แก่ เอกสารอ้างอิง(Reference; Rf),เอกสารประกอบการปฏิบัติงาน (Card file; Cf), สมุดบันทึก (Log book; Lb) เป็นต้น 5)เอกสารคุณภาพ(เอกสารควบคุม)ในระบบ CFS (Chonburi Computer Center For Service) ของโรงพยาบาล ผู้ที่เปิดอ่านสามารถพิมพ์ออกมาเพื่อศึกษา/สอนงานหรืออื่นๆได้ ซึ่งเอกสารที่พิมพ์ออกมามีคำว่า เอกสารควบคุม ที่หัวกระดาษ อาจมีความเสี่ยงที่จะนำเอกสารไม่เป็นปัจจุบันมาใช้</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:28,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15189`,clause:`4.2.3 Confidentiality (Personnel responsibility)`,problem:`<p>1) หนังสือลงนามการไม่ไปเกี่ยวข้องในกิจกรรมที่ลดความ เชื่อมั่น ในความสามารถ ความเป็นกลาง ความซื่อสัตย์ ความยุติธรรม และการเปิดเผยข้อมูลที่เป็นความลับ (Fm-QP-LAB-27-01) ข้อ 2.1 ระบุว่า ......ถือว่าเป็นความลับที่ต้องรักษาไว้ตลอดระยะเวลาที่ผู้ลงนามปฏิบัติในหน้าที่ และต่อไปในระยะเวลา 5 ปี นับตั้งแต่วันที่พ้นจากหน้าที่การทำงาน ....... ทั้งนี้แสดงว่าหลังจากพ้นจากหน้าที่การทำงาน 5 ปี ไปแล้ว สามารถเปิดเผยข้อมูลที่เป็นความลับได้ 2) ไม่พบหลักฐานการดำเนินการให้บุคลากรภายนอกเช่น เจ้าหน้าที่ ITของบริษัทLIS ซึ่งเข้าถึงข้อมูลผู้ป่วย/ข้อมูลห้องปฏิบัติการได้ เข้าใจและรับผิดชอบเก็บรักษาความลับอย่างเคร่งครัด</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:29,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15189`,clause:`7.3.1`,problem:`<p>พบวิธีปฏิบัติ การย้อมสีและการวินิจฉัยโรคติดเชื้อโดยการตรวจสิ่งส่งตรวจด้วยกล้องจุลทรรศน์ (WI-T-MI04)  ข้อ 14.3.2 รายงานจำนวนเชื้อที่พบ โดย grading ด้วย objective lens x20 ของการตรวจ AFB ด้วยวิธี Fluorescence stain ไม่ถูกต้องตามวิธีมาตรฐาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:30,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15189`,clause:`7.4.1.3`,problem:`<p>พบว่าการรายงานผลค่าวิกฤต เมื่อตรวจพบเชื้อแบคทีเรียและเชื้อวัณโรค ในสิ่งส่งตรวจที่เป็น sterile body fluid  ไม่สามารถรายงานผลในระบบ CFS ของ โรงพยาบาลได้</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:31,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15189`,clause:`7.2.4.4`,problem:`<p>ไม่พบเอกสารหรือ card file แนะนำการเก็บปัสสาวะหรืออุจจาระในห้องน้ำ เพื่อแนะนำการเก็บสิ่งส่งตรวจที่ถูกต้อง ที่ชั้น 3 อาคาร ศสม.</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:32,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15189`,clause:`7.3.6`,problem:`<p>- พบวิธีปฏิบัติ การอ่านผล Primary Plate และการทดสอบ เบื้องต้น (WI-T-MI14) ข้อ 10 วิธีดำเนินการ (Procedures) มีเนื้อหาไม่ชัดเจนและไม่ครอบคลุมกับงานที่ปฏิบัติจริง ขาดความเชื่อมโยงไปสู่ เอกสารที่เกี่ยวข้อง เช่นวิธีการตรวจพิสูจน์เชื้อและการทดสอบความไวต่อยาต้านจุลชีพ  - พบวิธีปฏิบัติ การใช้งาน AllplexTM MTB/MDRe ด้วยเครื่อง Seegene STARlet (WI-E-MI07) ข้อ 10.3 ขั้นตอนการเตรียมตัวอย่างจากสิ่งส่งตรวจ มีเนื้อหาไม่ชัดเจนและไม่ครอบคลุมกับงานที่ปฏิบัติจริง</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:33,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15189`,clause:`6.6.3`,problem:`<p>ไม่พบหลักฐานการควบคุมคุณภาพอาหารเลี้ยงเชื้อที่ครบถ้วนตามคุณสมบัติของอาหารเลี้ยงเชื้อแต่ละชนิดก่อนนำมาใช้งาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:34,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15189`,clause:`7.3.7.2`,problem:`<p>ไม่พบบันทึกการตรวจ IQC ประจำวันในการตรวจย้อมสี AFB (kinyoun method) ที่ห้องปฏิบัติการ ศสม.</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:35,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`6.4.2 Equipment requirements`,problem:`<p>ห้องปฏิบัติการกลาง รพ.ชลบุรี  เครื่องแก้ว Volumetric pipette ไม่อยู่ใน Equipment checklist ใช้ Volumetric pipette Class B ในการเตรียม Calibrator EQA IQC ไม่สอบเทียบ Volumetric pipette  ห้องปฏิบัติการ ศสม  เครื่องวิเคราะห์ c503 และอุปกรณ์ห้องปฏิบัติการ BSC Class II, Fume Hood, Autopipette, Centrifuge. ไม่พบใน Equipment checklist  ขอให้ขยายผลเช็คเครื่องมือที่ใช้ในห้องปฏิบัติการขึ้นทะเบียนให้ครบ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:36,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`6.3.4 Personnel facilities`,problem:`<p>จากการตรวจสอบพื้นที่ห้องปฏิบัติงาน ณ ชั้น 2 ศสม. พบว่า ไม่มีพื้นที่สำหรับเปลี่ยนชุดและอุปกรณ์ป้องกันส่วนบุคคลและเสื้อคลุม และไม่มีพื้นที่พักผ่อนของเจ้าหน้าที่ห้องปฏิบัติการ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:37,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`7.4.1 Reporting of results`,problem:`<p>จากการตรวจสอบใบรายงานผลการวิเคราะห์พบว่ามีการใช้สัญญาลักษณ์ลูกศรขึ้น เพื่อแสดงว่าค่าสูงกว่าค่าอ้างอิง และเครื่องหมายลูกศรลง เพื่อแสดงว่าค่าต่ำกว่าค่าอ้างอิง แต่ในใบรายงานผลไม่มีการใส่หมายเหตุ (Remark) ถึงความหมายของลูกศรขึ้นและลง ส่งผลต่อความชัดเจนของใบรายงานผล</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:38,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`7.3.6 Documentation of examination procedures`,problem:`<p>จากการตรวจสอบวิธีวิเคราะห์รายการทดสอบทางเคมี พบว่า   มีการระบุประเภทตัวอย่างวิเคราะห์ มากกว่าชนิดตัวอย่างที่ขอการรับรอง เช่น รายการทดสอบน้ำตาล ขอการรับรองชนิดตัวอย่างเป็น NaF แต่ในเอกสารวิธีวิเคราะห์ระบุว่าใช้ Serum, EDTA, Heparin, Urine 24 ชั่วโมง, CSF ซึ่งไม่ตรงกับรายการยื่นขอการรับรอง ไม่ระบุช่วงของการวิเคราะห์ (Measurement range) ไม่ระบุค่าอ้างอิง รายการทดสอบ Creatinine ไม่ระบุวิธีการคำนวณ eGFR สำหรับห้องปฏิบัติการ ศสม. มีการเตรียมตัวอย่างด้วยการปั่นด้วยเครื่องปั่นเหวี่ยง 3500 rpm, 5 นาที แต่ในเอกสารวิธีวิเคราะห์ระบุว่าปั่นที่ความเร็วรอบ 3500 rpm, 10 นาที ซึ่งไม่ตรงกัน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:39,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`7.5 Nonconforming work (g)`,problem:`<p>จากการตรวจสอบผลการทำ IQC ของรายการทดสอบทางเคมี ห้องปฏิบัติการ ศสม. พบว่ามีบางรายการทดสอบ ค่า IQC วันที่ 27/05/2026 เกินช่วงการยอมรับ แต่ไม่มีการบันทึกความไม่สอดคล้อง รวมทั้งแนวทางการแก้ไขและวิธีการป้องกันการเกิดซ้ำ ขอให้ขยายผลให้ครบทุกรายการทดสอบ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:40,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`6.3.3 Storage facilities`,problem:`<p>ห้องเก็บน้ำยา วัสดุสิ้นเปลือง ณ พื้นที่ห้องปฏิบัติการ ศสม. ไม่มีตู้เก็บ หรือชั้นวาง เพื่อการป้องกันการปนเปื้อนและควบคุมสภาพแวดล้อม เพราะสิ่งที่พบคือ 1) วางตามพื้นใต้พื้นที่ทำแลป ไม่มีตู้หรือบานประตูปิด หรือชั้นวาง 2) ไม่มีการควบคุมอุณหภูมิและความชื้น</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:41,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`6.3.5 Sample collection facilities`,problem:`<p>พบว่า บริเวณเจาะเลือด อาคาร ศสม. ไม่มีพื้นที่เจาะเลือดสำหรับกลุ่มผู้ป่วยนอนเตียงและเก้าอี้วีลแชร์</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:42,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`6.5.2 Equipment calibration`,problem:`<p>จากการตรวจสอบ พบว่า  Volumetric pipette ไม่สอบเทียบทั้งห้องปฏิบัติการกลางและห้องปฏิบัติการ ศสม. อุปกรณ์ห้องปฏิบัติการกลางและห้องปฏิบัติการ ศสม. ไม่ประเมินผลการสอบเทียบเครื่องมือ </p>`,status:`รอการบันทึกแก้ไข`},
+  {id:43,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`6.6.2 Reagents and consumables`,problem:`<p>ห้องปฏิบัติการกลางและห้องปฏิบัติการ ศสม. ใช้น้ำ sterile มาใช้เตรียม Calibrator EQA IQC ซึ่งไม่สอดคล้องกับเอกสารกำกับน้ำยาให้ใช้ Distill/Deionized water</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:44,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15189`,clause:`7.3.2 Verification of examination methods`,problem:`<p>จากการตรวจสอบการทวนทอบวิธีวิเคราะห์ ของเครื่องวิเคราะห์ c503 ห้องปฏิบัติการ ศสม. ไม่พบการประเมิน Between-run precision </p>`,status:`รอการบันทึกแก้ไข`},
+  {id:45,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.3.2`,problem:`<p>พบว่ามีรายงานเอกสาร method verification รายการทดสอบ Viral load, HPV และ CD4 แต่ไม่มีรายละเอียดน้ำยาตรวจวิเคราะห์และเครื่องมือที่ใช้ ผู้ดำเนินการ วันที่ดำเนินการ ทั้งนี้การทำ method verification/validation เป็นงานที่ห้องปฏิบัติการจะต้องดำเนินการตามวิธีปฏิบัติที่กำหนดครอบคลุมทุกขั้นตอนและชนิดของสิ่งส่งตรวจของรายการทดสอบที่ขอการรับรอง และทำการทดสอบโดยบุคลากรผู้รับผิดชอบการทดสอบนั้นๆ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:46,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`6.4.5`,problem:`<p>ไม่พบการกำหนดการบำรุงรักษาเครื่องมือที่เหมาะสม/ไม่ปฏิบัติตามแผน ได้แก่ การทวนสอบการใช้งานเครื่องตรวจสารพันธุกรรม Qubit และการทดสอบศักยภาพเครื่องสำรองไฟ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:47,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.3.1 d)`,problem:`<p>พบความไม่สอดคล้องของการตรวจ CD4 ในเอกสารวิธีปฏิบัติและในเอกสารกำกับน้ำยาและ method verification และไม่ปฏิบัติงานกับตัวอย่างส่งตรวจในตู้ปลอดเชื้อ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:48,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.3.6 a)`,problem:`<p>วิธีปฏิบัติงานตรวจวิเคราะห์ 6 รายการทดสอบ ไม่สมบูรณ์/ไม่พบรายละเอียด/ข้อมูลสำคัญที่กระทบกับการตรวจวิเคราะห์ ได้แก่ 1. หลักการตรวจวิเคราะห์และการแปลผล2. ชื่อ, ยี่ห้อ, รหัสน้ำยาและอุณหภูมิการเก็บรักษา 3. ชื่อและรุ่นโมเดลเครื่องมือทั้งหมด 4. รายการวัสดุวิทยาศาสตร์ที่ใช้ทั้งหมด และควรระบุชนิดและยี่ห้อของวัสดุที่มีผลต่อการทดสอบด้วย5. ปริมาณและ/หรือความเข้มข้นของตัวอย่างตรวจวิเคราะห์ในแต่ละขั้นตอนย่อยและวิธีปฏิบัติเมื่อตัวอย่างไม่เป็นไปตามเกณฑ์ของการควบคุมคุณภาพ (QC check point) ในแต่ละขั้นตอนย่อย6. วิธีปฏิบัติก่อนการตรวจวิเคราะห์ ได้แก่ เกณฑ์การปฏิเสธตัวอย่างตามปฏิบัติจริงและวิธีดำเนินการเมื่อตัวอย่างเข้าข่ายเกณฑ์ปฏิเสธตัวอย่าง/ไม่เหมาะสมดำเนินการต่อในขั้นตอนต่อไป7. วิธีปฏิบัติหลังการตรวจวิเคราะห์ ได้แก่ การเก็บรักษาตัวอย่าง/ข้อมูลเพื่อการทวนสอบ การทำลายตัวอย่าง/ข้อมูล และการทำความสะอาดพื้นที่ปฏิบัติงาน8. เอกสารอ้างอิงและเอกสารที่เกี่ยวข้องทั้งหมด</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:49,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.3.7.2`,problem:`<p>พบว่าในทุกรายการทดสอบที่ใช้หลักการ real-time PCR และNIPT มีการทำ positive control และ negative control ซึ่งใช้เป็น IQC มีรายงานความถูกต้องการตรวจสอบผลเชิงคุณภาพ คือ positive/negative แต่ไม่พบการตรวจสอบความถูกต้องเชิงปริมาณที่แสดงถึงประสิทธิภาพของปฏิกิริยา real-time PCR หรือ NGS ในแต่ละรอบการทดสอบ รายการทดสอบ CD4 มีการทำ IQC แต่ไม่ได้บันทึก absolute และ %CD แต่ละครั้ง และไม่มีการบันทึกเมื่อมีการเปลี่ยน Lot. หลอด BD Trucount tubes</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:50,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.3.6`,problem:`<p>การตรวจวิเคราะห์และการวิเคราะห์ข้อมูล NIPT มีหลายขั้นตอน (มากกว่า 50 ขั้นตอนย่อย) แต่ไม่พบแบบฟอร์มสำหรับการทวนสอบความครบถ้วนและถูกต้องของการปฏิบัติงาน (checklist/worksheet) การวิเคราะห์ข้อมูล และมี worksheet ของการเตรียมตัวอย่างก่อนทำ Sequencing แต่ไม่ระบุค่าระดับคุณภาพที่ยอมรับได้ (QC check) แต่ละขั้นตอนย่อย และหลักฐานการได้ดำเนินการขั้นตอนต่างๆ ไม่พบวิธีปฏิบัติงาน/card file ขั้นตอนสำคัญในพื้นที่ปฏิบัติงาน centrifuge ไม่พบการขึ้นทะเบียนและระบุรหัสเอกสารของเอกสารกำกับน้ำยาและคู่มือการใช้งานเครื่องมือจากบริษัทผู้ผลิตที่ใช้ในการปฏิบัติงาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:51,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.3.7`,problem:`<p>ไม่พบวิธีปฏิบัติการทวนสอบความถูกต้อง/ความสมบูรณ์การถ่ายโอนข้อมูลจากเครื่อง Sequencer ไปยังโปรแกรมการวิเคราะห์ข้อมูล และการทวนสอบความถูกต้องการบันทึกข้อมูลในการรายงานผล</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:52,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.4.2`,problem:`<p>ไม่พบการกำหนดระยะเวลาการเก็บรักษาข้อมูล NGS หลังการตรวจวิเคราะห์เพื่อการทวนสอบและการควบคุมการเข้าถึงข้อมูลที่เก็บรักษาในเครื่อง Sequencer เครื่องคอมพิวเตอร์วิเคราะห์ข้อมูล และ external hard disk สำหรับถ่ายโอนข้อมูลและสำหรับเก็บรักษาข้อมูลระยะยาว และไม่พบบันทึก/แบบฟอร์มการทำลายไฟล์ข้อมูลที่ครบกำหนดเก็บรักษาในแต่ละเครื่องมือ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:53,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`6.2.1`,problem:`<p>มีบุคลากรรับผิดชอบงานวิเคราะห์ข้อมูล NIPT 1 คน โดยไม่มีบุคลากรที่สามารถทำงานทดแทนได้ มีการคาดการณ์ว่ารายการทดสอบ NIPT จะมีตัวอย่างทดสอบเพิ่มขึ้นจำนวนมากแต่การตรวจวิเคราะห์มีขั้นตอนจำนวนมากใช้เวลาทดสอบต่อเนื่อง 3-5 วัน ควรพิจารณาการจัดสรรบุคลากรให้เพียงพอกับปริมาณงานที่จะเพิ่มขึ้นเพื่อให้สามารถรายงานผลได้ทันเวลาที่กำหนด</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:54,inspector:`อรพรรณ ศรีพิชัย`,ncType:`C`,stdType:`15189`,clause:`7.3.7.3`,problem:`<p>ไม่พบแผนดำเนินการและผลการทดสอบ EQA รายการทดสอบ NIPT และไม่พบวิธีปฏิบัติกรณีผล EQA ไม่เป็นไปตามเกณฑ์ ไม่พบผลการสรุปการดำเนินการทดสอบ EQA รายการทดสอบ viral load, HPV และ CD4</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:55,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`O`,stdType:`15189`,clause:`8.3.2 c) Control of documents (review and update)`,problem:`<p>เนื้อหา การบริหารจัดการความเสี่ยง การระบุความเสี่ยง การดำเนินการกับความเสี่ยงและโอกาสในการปรับปรุง ในเอกสารการบริหารความเสี่ยงและการดำเนินการกับสิ่งที่ไม่ สอดคล้องกับข้อกำหนด QP-LAB-06 แก้ไขครั้งที่ 10 วันที่บังคับใช้ 8 มีนาคม 2569 ไม่ตรงกับที่ได้ดำเนินการ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:56,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`O`,stdType:`15189`,clause:`6.2.1 General (a) The laboratory shall have access to a sufficient number of competent persons to perform its activities.`,problem:`<p>ณ พื้นที่ห้องปฏิบัติการ ชั้น 2 อาคาร ศสม. พบว่า มีรายชื่อนักเทคนิคการแพทย์ประจำจำนวน 4 คน แต่จากการตรวจสอบสภาพจริง พบว่า เจ้าหน้าที่ส่วนใหญ่จะอยู่พื้นที่เจาะเลือดชั้น 3 เหลือนักเทคนิคการแพทย์เพียง 1 คนที่ทำหน้าที่  ขนส่งตัวอย่าง ลงทะเบียน เตรียมตัวอย่าง นำเข้าเครื่องวิเคราะห์ หามีรายการทดสอบหลากหลายก็ดำเนินการเพียงคนเดียว รวมถึงการรายงานผล ซึ่งจะส่งผลต่อคุณภาพการให้บริการ จำเป็นต้องพิจารณาจำนวนนักเทคนิคการแพทย์เพิ่มเติม</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:57,inspector:`อรพรรณ ศรีพิชัย`,ncType:`O`,stdType:`15189`,clause:`7.2.7.1`,problem:`<p>พบการเคลื่อนย้ายตัวอย่างตรวจวิเคราะห์ระหว่างพื้นที่ปฏิบัติการและตู้เย็นเก็บตัวอย่างที่อยู่นอกห้องปฏิบัติการโดยไม่มี second container</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:58,inspector:`อรพรรณ ศรีพิชัย`,ncType:`O`,stdType:`15189`,clause:`6.2.2`,problem:`<p>ไม่พบรายงานผลการประเมินความสามารถบุคลากรก่อนปฏิบัติงานที่ครอบคลุมด้านวิชาการ ความปลอดภัย และการปฏิบัติจริงในรายการทดสอบที่รับผิดชอบของบุคลากรห้องปฏิบัติการ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:59,inspector:`อรพรรณ ศรีพิชัย`,ncType:`O`,stdType:`15189`,clause:`6.2.1`,problem:`<p>ไม่พบแบบมอบหมายงานที่มีการแต่งตั้ง ผู้ปฏิบัติงานตรวจวิเคราะห์ ผู้รายงานผล ผู้รับรองผล และผู้ปฏิบัติงานหลักและผู้ปฏิบัติงานแทนผู้รับผิดชอบหลักของแต่ละรายการทดสอบ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:60,inspector:`อรพรรณ ศรีพิชัย`,ncType:`O`,stdType:`15189`,clause:`6.3.3`,problem:`<p>พบการเก็บรักษาตัวอย่างเพื่อการทวนสอบไม่เหมาะสม ได้แก่  ตัวอย่างรายการทดสอบ viral load เก็บในห้องปฏิบัติการโดยไม่ได้เก็บในกล่องปิดและป้องกันการมองเห็นโดยบุคคลที่ไม่เกี่ยวข้อง ตัวอย่างรายการทดสอบ HPV เก็บในถุงแดงวางรวมกับน้ำยาตรวจวิเคราะห์และวัสดุวิทยาศาสตร์ที่ยังไม่ได้ใช้งาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:61,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15190`,clause:`11.1.3      Alarm systems`,problem:`<p>ไม่พบบันทึกการตรวจสอบระบบ Smoke detector และ Alarm system ที่ Central lab</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:62,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15190`,clause:`7.4  Aerosols`,problem:`<p>1.    พบกระป๋องใส่ของมีคมติดเชื้อเปิดฝาทิ้งไว้เมื่อไม่มีการใช้งาน ที่จุดเจาะเลือด OPD ชั้น G และ ในรถเจาะเลือดที่ ward ศัลยกรรมและอุบัติเหตุชาย มีความเสี่ยงในการกระจายของเชื้อจากละอองฝอย2.    พบเครื่อง Centrifuge KOKUSAN H-19F ที่จุดเจาะเลือด OPD ชั้น G จากการสอบถามเจ้าหน้าที่แจ้งว่าใช้ในการปั่นเลือดทำวิจัยนอกเวลา  มีความเสี่ยงในการกระจายของเชื้อจากการปั่นเลือดและไม่เหมาะสมเนื่องจากบริเวณนั้นเป็นพื้นที่ที่ผู้ป่วยนั่งรอเจาะเลือด</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:63,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15190`,clause:`15.5 h)`,problem:`<p>จากการสังเกตที่จุดเจาะเลือดและสอบถามเจ่าหน้าที่ที่จุดเจาะเลือด OPD ชั้น G แจ้งว่าจะมีการเปลี่ยนถุงมือเมื่อมีการเจาะเลือดผู้ป่วย 2-3 ราย แต่ไม่พบการทำสะอาดถุงมือด้วยน้ำยาฆ่าเชื้อเมื่อมีการเจาะเลือดผู้ป่วยรายถัดไป มีความเสี่ยงในการปนเปื้อนเชื้อ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:64,inspector:`กาญจนา วิจิตรธรรมรส`,ncType:`C`,stdType:`15190`,clause:`4.2 g)`,problem:`<p>พบการจัดวางอุปกรณ์ที่สะอาดปลอดเชื้อในบริเวณเดียวกับอุปกรณ์ติดเชื้อ มีความเสี่ยงในการปนเปื้อนเชื้อ เช่น1.    จุดเจาะเลือด OPD ชั้น G ช่อง 9 พบการวางเข็มเจาะเลือด vacutainer ที่ยังไม่ได้ใช้งานติดกับกระป๋องทิ้งของมีคมWard ศัลยกรรมและอุบัติเหตุชาย บนรถเจาะเลือดชั้นล่างสุด วางสำลีแห้ง sterile และ set ให้น้ำเกลือที่ยังไม่ได้ใช้งานติดกับถังใส่เข็มและ syringe ที่ใช้งานแล้ว</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:65,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15190`,clause:`17.3 Hazardous waste`,problem:`<p>ในห้องล้างอุปกรณ์ พบถุงขยะติดเชื้อ และถุงขยะทั่วไป วางในรถเข็นสแตนเลส(แบบตะแกรง) โดยถุงขยะติดเชื้อ ไม่ได้ใส่ในsecondary container</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:66,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15190`,clause:`5.5 Laboratory safety officer`,problem:`<p>จากผังโครงสร้างระบบบริหารคุณภาพกลุ่มงานเทคนิคการแพทย์และพยาธิวิทยาคลินิก โรงพยาบาลชลบุรี พบว่า ผู้จัดการความปลอดภัย(LSO) ไม่มีสายประสานงาน/รายงานโดยตรงต่อผู้บริหารระดับของกลุ่มงานฯได้</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:67,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`C`,stdType:`15190`,clause:`8.6 Chemical spills 10.5 Spill response`,problem:`<p>อุปกรณ์ในกล่องChemical spill kit ไม่เหมาะสมสำหรับใช้กรณีเกิดเหตุสารเคมีในห้องปฏิบัติการหกรั่วไหล</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:68,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15190`,clause:`7.3`,problem:`<p>พบตู้แช่แข็ง -20OC สำหรับเก็บรักษาเชื้อก่อโรคอันตราย ไม่มีการล็อคประตูเพื่อป้องกันการเข้าถึงของผู้ไม่ได้รับอนุญาต</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:69,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15190`,clause:`11.2 11.1.6.2`,problem:`<p>- ไม่พบแผนผผังเส้นทางหนีไฟ บริเวณชั้น 3 อาคาร ศสม. - ไม่พบบันทึกการตรวจสอบความพร้อมใช้งานประจำเดือนของถังดับเพลิง บริเวณชั้น 3 อาคาร ศสม.</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:70,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15190`,clause:`17.2`,problem:`<p>พบจุดพักคอยขยะติดเชื้อและขยะทั่วไป บริเวณข้างอาคาร ศสม. อยู่ในที่โล่งแจ้ง เสี่ยงต่อการแพร่กระจายเชื้อโรคสู่ชุมชนและผู้มาใช้บริการ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:71,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`C`,stdType:`15190`,clause:`4.2`,problem:`<p>พบปัญหาพื้นที่สำหรับใช้เตรียมอาหารเลี้ยงเชื้อ (APW, GN broth) ไปใช้ร่วมกับห้อง Negative pressure สำหรับงานเพาะเชื้อวัณโรค ทำให้เกิดความเสี่ยงต่อการติดเชื้อของผู้ปฏิบัติงาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:72,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15190`,clause:`11.2 Emergency exits and evacuations`,problem:`<p>จากการตรวจสอบสภาพแวดล้อมภายในห้องปฏิบัติการกลาง Central Lab อาคาร 14 ชั้น โรงพยาบาลชลบุรี และภายในห้องปฏิบัติการ ชั้น 2 อาคาร ศสม. ไม่มีป้ายหนีไฟหรือป้ายทางออกฉุกเฉินภายในห้องปฏิบัติการ มีเพียงพื้นที่ภายนอกห้องปฏิบัติการ</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:73,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15190`,clause:`8.5 Chemical storage`,problem:`<p>ประเด็นที่ 1 ห้องปฏิบัติการกลาง พบว่า 1) ตู้เก็บสารเคมีชำรุด ไม่สามารถล็อกประตู้ตู้ได้, 2) ไม่พบการทำ PM เพื่อตรวจสอบประสิทธิภาพแรงลมของตู้เก็บสารเคมีดังกล่าว ประเด็นที่ 2 ห้องปฏิบัติการ ศสม.ไม่พบตู้เก็บสารเคมี</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:74,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15190`,clause:`10.3 Eyewash facilities`,problem:`<p>ห้องปฏิบัติการกลาง ประเด็นที่ 1 จากการตรวจสอบ พบว่า มีขวดน้ำเกลือปากขวดแหลม ซึ่งไม่เหมาะสมกับการทำไปใช้เพราะสามารถเพิ่มอาการอักเสบได้ ประเด็นที่ 2 จำนวนน้ำเกลือมีเพียง 1 ขวดขนาด 1 ลิตรซึ่งไม่เพียงพอต่อการใช้งาน ประเด็นที่ 3 บริเวณเก็บขวดน้ำเกลือไม่อยู่บริเวณอ่างน้ำ เก็บไว้บนชั้นวางซึ่งขวดน้ำเกลือจะต้องอยู่บริเวณใช้งาน ห้องปฏิบัติการ ศสม. - ไม่พบขวดน้ำเกลือล้างตา</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:75,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15190`,clause:`8.2 Chemical classification and labelling`,problem:`<p>ทั้งห้องปฏิบัติการกลางและห้องปฏิบัติการศสม. ไม่มีการแยกประเภทและติดสัญญาลักษณ์ความปลอดภัยทางเคมี</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:76,inspector:`ธรรมรักษ์ สุขศรีชวลิต`,ncType:`C`,stdType:`15190`,clause:`7.8 Biological spills`,problem:`<p>ห้องเจาะเลือด ชั้น 3 อาคาร ศสม. ไม่พบ Biological spill kit ในพื้นที่ปฏิบัติงาน</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:77,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`O`,stdType:`15190`,clause:`7.8 Biological spills 10.5 Spill response`,problem:`<p>1) อุปกรณ์สำหรับคีบของมีคม/เศษแก้ว ในกล่องBiological spill kit มีขนาดเล็ก ซึ่งต้องใช้อุปกรณ์นี้คีบของมีคม/เศษแก้วชิ้นใหญ่ ออกก่อนที่จะเทราดน้ำยาฆ่าเชื้อ  ทำให้มีความเสี่ยงที่จะสัมผัสสิ่งติดเชื้อ 2) วิธีปฏิบัติการทำความสะอาดบริเวณพื้นที่ที่มีการหกเลอะของสิ่งติดเชื้อ เนื้อหาข้อ 2 เป็นการตรวจสอบความพร้อมใช้ควรมีแนวทางการดำเนินการก่อนที่จะเกิดเหตุฯ,    ข้อ 5 ควรระบุให้ชัดเจนว่า กรณีมีของมีคม/เศษแก้วชิ้นใหญ่ ให้ใช้อุปกรณ์คีบทิ้งในกระป๋องสำหรับทิ้งของมีคม</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:78,inspector:`กฤตญา ลือชานิมิตจิต`,ncType:`O`,stdType:`15190`,clause:`8.2 Chemical classification`,problem:`<p>การจำแนกความเป็นอันตรายทางเคมี ในเอกสาร Unit Chemical Inventory List : ห้องเก็บสารเคมีกลุ่มงานเทคนิคการแพทย์ ใช้ระบบIMO ไม่สอดคล้องกับที่ระบุในนโยบายการจัดการสารเคมีละวัตถุอันตราย  PL-FMS-CBH-001 แก้ไขครั้งที่ 6 วันที่บังคับใช้ 1 มิถุนายน 2567 ซึ่งใช้ระบบGHS</p>`,status:`รอการบันทึกแก้ไข`},
+  {id:79,inspector:`สมพงศ์  ตรีวัชรีกร`,ncType:`O`,stdType:`15190`,clause:`17.3`,problem:`<p>พบขยะติดเชื้อจากห้องปฏิบัติการจุลชีววิทยาที่ผ่านการทำลายเชื้อแล้วด้วยการนึ่งทำลายด้วยไอน้ำถูกบรรจุในถุงขยะทั่วไปเพื่อให้หน่วยงานภายนอกนำไปทิ้งทำลาย อาจก่อให้เกิดความเข้าใจผิดของผู้ที่เกี่ยวข้องหรือชุมชนหากเกิดการแตก เสียหายของถุงบรรจุจนพบเห็นขยะที่สื่อถึงขยะติดเชื้อจากโรงพยาบาล</p>`,status:`รอการบันทึกแก้ไข`}
+];
+
+let currentNcId = null;
+
+// ═══════ CLAUSE DATA ═══════
+const CLAUSES_15189 = [
+  { num: "4.1", text: "Impartiality" },
+  { num: "4.2", text: "Confidentiality" },
+  { num: "5.1", text: "Legal entity" },
+  { num: "5.2", text: "Laboratory director" },
+  { num: "5.3", text: "Laboratory activities" },
+  { num: "6.1", text: "General (Resources)" },
+  { num: "6.2.1", text: "General (Personnel)" },
+  { num: "6.2.2", text: "Competence requirements" },
+  { num: "6.2.3", text: "Authorization" },
+  { num: "6.2.4", text: "Continuing education and professional development" },
+  { num: "6.2.5", text: "Personnel records" },
+  { num: "6.3.1", text: "General (Facilities and environmental conditions)" },
+  { num: "6.3.2", text: "Facilities for primary sample collection" },
+  { num: "6.3.3", text: "Storage facilities" },
+  { num: "6.4.1", text: "General (Equipment)" },
+  { num: "6.4.2", text: "Equipment acceptance testing" },
+  { num: "6.4.3", text: "Equipment instructions for use" },
+  { num: "6.4.4", text: "Equipment calibration and metrological traceability" },
+  { num: "6.4.5", text: "Equipment maintenance and repair" },
+  { num: "6.4.6", text: "Adverse incident reporting related to equipment" },
+  { num: "6.4.7", text: "Equipment records" },
+  { num: "6.5",   text: "Externally provided services and supplies" },
+  { num: "7.1",   text: "Review of requests, suitability of examinations and samples" },
+  { num: "7.2",   text: "Examination request" },
+  { num: "7.3.1", text: "General (Pre-examination processes)" },
+  { num: "7.3.2", text: "Information for patients and users" },
+  { num: "7.3.3", text: "Request form information" },
+  { num: "7.3.4", text: "Primary sample collection and handling" },
+  { num: "7.3.5", text: "Biological reference intervals and clinical decision limits" },
+  { num: "7.4",   text: "Primary sample transportation" },
+  { num: "7.5",   text: "Primary sample receipt" },
+  { num: "7.6",   text: "Pre-examination handling, preparation and storage" },
+  { num: "7.7.1", text: "General (Examination processes)" },
+  { num: "7.7.2", text: "Biological reference intervals and clinical decision limits" },
+  { num: "7.7.3", text: "Documentation of examination procedures" },
+  { num: "7.8.1", text: "General (Quality assurance of examination results)" },
+  { num: "7.8.2", text: "Quality control" },
+  { num: "7.8.3", text: "Interlaboratory comparisons" },
+  { num: "7.8.4", text: "Comparability of examination results" },
+  { num: "7.9.1", text: "Review of results" },
+  { num: "7.9.2", text: "Storage, retention and disposal of samples" },
+  { num: "7.10.1", text: "General (Reporting of results)" },
+  { num: "7.10.2", text: "Report attributes" },
+  { num: "7.10.3", text: "Report content" },
+  { num: "7.11",  text: "Laboratory information management" },
+  { num: "8.1",   text: "Options (Management system)" },
+  { num: "8.2",   text: "Management system documentation" },
+  { num: "8.3",   text: "Control of management system documents" },
+  { num: "8.4",   text: "Control of records" },
+  { num: "8.5",   text: "Actions to address risks and opportunities" },
+  { num: "8.6.1", text: "Continual improvement" },
+  { num: "8.6.2", text: "Feedback from patients and users" },
+  { num: "8.6.3", text: "Suggestions from staff" },
+  { num: "8.7",   text: "Nonconformity and corrective action" },
+  { num: "8.8",   text: "Internal audits" },
+  { num: "8.9",   text: "Management reviews" },
+];
+
+const CLAUSES_15190 = [
+  { num: "4",     text: "Normative references" },
+  { num: "5.1",   text: "General (Safety management)" },
+  { num: "5.2",   text: "Safety officer" },
+  { num: "5.3",   text: "Safety committee" },
+  { num: "5.4",   text: "Safety manual" },
+  { num: "5.5",   text: "Safety education and training" },
+  { num: "5.6",   text: "Safety risk assessment" },
+  { num: "5.7",   text: "Safety records" },
+  { num: "6.1",   text: "General (Facilities)" },
+  { num: "6.2",   text: "Building design and construction" },
+  { num: "6.3",   text: "Ventilation and air quality" },
+  { num: "6.4",   text: "Ergonomics" },
+  { num: "7.1",   text: "General (Chemical safety)" },
+  { num: "7.2",   text: "Chemical inventory and labelling" },
+  { num: "7.3",   text: "Hazardous chemicals handling and storage" },
+  { num: "7.4",   text: "Chemical spill management" },
+  { num: "7.5",   text: "Waste chemical disposal" },
+  { num: "8.1",   text: "General (Biological safety)" },
+  { num: "8.2",   text: "Biological risk assessment" },
+  { num: "8.3",   text: "Containment measures" },
+  { num: "8.4",   text: "Personal protective equipment (PPE)" },
+  { num: "8.5",   text: "Biological waste management" },
+  { num: "8.6",   text: "Decontamination and disinfection" },
+  { num: "8.7",   text: "Sharps injury prevention" },
+  { num: "9",     text: "Radiation safety" },
+  { num: "10",    text: "Electrical safety" },
+  { num: "11",    text: "Fire safety and emergency evacuation" },
+  { num: "12",    text: "Emergency procedures" },
+  { num: "13",    text: "Personal hygiene" },
+  { num: "14",    text: "Violence and security" },
+];
+
+const SPECIAL_CHARS = [
+  'α','β','γ','δ','ε','ζ','η','θ','λ','μ','ν','ξ','π','ρ','σ','τ','φ','χ','ψ','ω',
+  'Α','Β','Γ','Δ','Ε','Ζ','Θ','Λ','Μ','Ξ','Π','Σ','Φ','Ψ','Ω',
+  '±','≤','≥','≠','≈','∞','√','∑','∫','∂','∇','°','′','″',
+  '→','←','↑','↓','⇒','⇔','×','÷','·',
+  '₁','₂','₃','₄','ˡ','²','³','⁴','⁻','⁺',
+  'μg','mL','μL','mmol','μmol','mg','dL','nmol','ng','pg',
+];
+
+// ═══════ CLAUSE SEARCH ═══════
+let currentClauses = CLAUSES_15189;
+let blurTimer;
+
+function onStdChange() {
+  const v = document.getElementById('stdType').value;
+  currentClauses = v === '15190' ? CLAUSES_15190 : CLAUSES_15189;
+  document.getElementById('clauseInput').value = '';
+  document.getElementById('clauseDropdown').innerHTML = '';
+}
+
+function showClauseDropdown() {
+  searchClause(document.getElementById('clauseInput').value || '');
+}
+
+function hideClauseDropdown() {
+  blurTimer = setTimeout(() => {
+    document.getElementById('clauseDropdown').classList.remove('show');
+  }, 200);
+}
+
+function searchClause(q) {
+  const dd = document.getElementById('clauseDropdown');
+  const filtered = q.trim() === ''
+    ? currentClauses.slice(0, 20)
+    : currentClauses.filter(c =>
+        c.num.toLowerCase().includes(q.toLowerCase()) ||
+        c.text.toLowerCase().includes(q.toLowerCase())
+      );
+  if (!filtered.length) { dd.classList.remove('show'); return; }
+  dd.innerHTML = filtered.map(c =>
+    `<div class="clause-option" onmousedown="selectClause('${c.num}','${c.text.replace(/'/g,"\\'")}')">
+      <span class="clause-num">${c.num}</span> — ${c.text}
+    </div>`
+  ).join('');
+  dd.classList.add('show');
+}
+
+function selectClause(num, text) {
+  clearTimeout(blurTimer);
+  document.getElementById('clauseInput').value = `${num} ${text}`;
+  document.getElementById('clauseDropdown').classList.remove('show');
+}
+
+// ═══════ RICH TEXT EDITOR ═══════
+let activeRteId = 'rte_extent';
+
+function fmt(cmd) {
+  document.execCommand(cmd, false, null);
+}
+
+function fmt2(cmd, id) {
+  const el = document.getElementById(id);
+  el.focus();
+  document.execCommand(cmd, false, null);
+  activeRteId = id;
+}
+
+// Track last focused RTE for special char insertion
+document.querySelectorAll('.rte-content').forEach(el => {
+  el.addEventListener('focus', () => { activeRteId = el.id; });
+});
+
+// ═══════ SPECIAL CHARS ═══════
+function toggleSpecialChar() {
+  const p = document.getElementById('specialCharPalette');
+  if (p.style.display === 'none') {
+    // build palette if empty
+    if (!document.getElementById('charPaletteButtons').innerHTML) {
+      document.getElementById('charPaletteButtons').innerHTML = SPECIAL_CHARS.map(c =>
+        `<button type="button" onclick="insertSpecialChar('${c}')"
+          style="min-width:30px;padding:3px 6px;background:#fff;border:1px solid #d0d7de;border-radius:4px;cursor:pointer;font-size:13px">${c}</button>`
+      ).join('');
+    }
+    p.style.display = 'block';
+  } else {
+    p.style.display = 'none';
+  }
+}
+
+function insertSpecialChar(ch) {
+  const el = document.getElementById(activeRteId);
+  el.focus();
+  document.execCommand('insertText', false, ch);
+}
+
+// ═══════ NC TYPE ═══════
+document.querySelectorAll('input[name="ncType"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const v = r.value;
+    document.getElementById('ncTypeDesc').textContent =
+      v === 'C' ? 'C = Conformance / ข้อบกพร่อง' : 'O = Observation / ข้อสังเกต';
+  });
+});
+
+// ═══════ ROUND ═══════
+function onRoundChange() {
+  const v = document.getElementById('roundSelect').value;
+  document.getElementById('roundNumDisplay').textContent = v === '0' ? 'ใหม่' : v;
+}
+
+// ═══════ FILE UPLOAD + R2 ═══════
+async function handleFileSelect(input) {
+  if (!input.files.length) return;
+  const file = input.files[0];
+  document.getElementById('fileNameText').textContent = file.name;
+  document.getElementById('fileNameDisplay').style.display = 'block';
+  document.getElementById('fileUrlLink').style.display = 'none';
+  document.getElementById('viewDocSection').style.display = 'none';
+
+  if (!R2_WORKER_URL || R2_WORKER_URL === 'YOUR_R2_WORKER_URL') return;
+
+  document.getElementById('uploadProgress').style.display = 'block';
+  document.getElementById('fileNameDisplay').style.display = 'none';
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('ncId', String(currentNcId || 'general'));
+    const res = await fetch(R2_WORKER_URL, { method: 'POST', body: form });
+    if (!res.ok) throw new Error((await res.text()) || 'Upload failed');
+    const { url } = await res.json();
+    document.getElementById('uploadedFileUrl').value = url;
+    const lnk = document.getElementById('fileUrlLink');
+    lnk.href = url; lnk.style.display = 'inline';
+    document.getElementById('viewDocLink').href = url;
+    document.getElementById('viewDocSection').style.display = 'block';
+    document.getElementById('fileNameDisplay').style.display = 'block';
+    showToast('อัพโหลดไฟล์สำเร็จ');
+  } catch (err) {
+    document.getElementById('fileNameDisplay').style.display = 'block';
+    showToast('อัพโหลดไม่สำเร็จ: ' + err.message, '#e74c3c');
+  } finally {
+    document.getElementById('uploadProgress').style.display = 'none';
+  }
+}
+
+function clearFile() {
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileNameDisplay').style.display = 'none';
+  document.getElementById('uploadProgress').style.display = 'none';
+  document.getElementById('uploadedFileUrl').value = '';
+  document.getElementById('viewDocSection').style.display = 'none';
+  const lnk = document.getElementById('fileUrlLink');
+  if (lnk) lnk.style.display = 'none';
+}
+
+// ═══════ NC LIST ═══════
+function renderNCList(data) {
+  document.getElementById('ncCountDisplay').textContent = data.length;
+  const tbody = document.getElementById('ncTableBody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:20px">ไม่พบรายการที่ตรงกัน</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(nc => {
+    const typeClr = nc.ncType === 'C' ? 'var(--primary)' : 'var(--warning)';
+    const stdLbl  = nc.stdType === '15190' ? 'ISO 15190' : 'ISO 15189';
+    const clShort = nc.clause.length > 52 ? nc.clause.slice(0, 52) + '…' : nc.clause;
+    const act = nc.id === currentNcId ? ' style="background:#e8f4fd"' : '';
+    return `<tr id="ncRow_${nc.id}"${act}>
+      <td style="font-weight:700;color:#777">${nc.id}</td>
+      <td style="font-size:12px">${nc.inspector}</td>
+      <td style="text-align:center">
+        <span style="background:${typeClr};color:#fff;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:700">${nc.ncType}</span>
+      </td>
+      <td style="font-size:11.5px;color:#555">${stdLbl}</td>
+      <td style="font-size:12px;color:#333;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${nc.clause}">${clShort}</td>
+      <td><span style="background:#fff3cd;color:#856404;padding:1px 8px;border-radius:10px;font-size:11px">รอแก้ไข</span></td>
+      <td>
+        <button type="button" onclick="loadNC(${nc.id})"
+          style="background:var(--primary);color:#fff;border:none;padding:3px 10px;border-radius:4px;font-size:12px;cursor:pointer;white-space:nowrap">
+          แก้ไข
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterNCList(query) {
+  const q = query.toLowerCase().trim();
+  const filtered = q === '' ? NC_DATA : NC_DATA.filter(nc =>
+    nc.inspector.toLowerCase().includes(q) ||
+    nc.clause.toLowerCase().includes(q) ||
+    String(nc.id).includes(q)
+  );
+  renderNCList(filtered);
+}
+
+async function loadNC(id) {
+  const nc = NC_DATA.find(n => n.id === id);
+  if (!nc) return;
+  currentNcId = id;
+
+  const radio = document.querySelector(`input[name="ncType"][value="${nc.ncType}"]`);
+  if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+
+  document.getElementById('stdType').value = nc.stdType;
+  onStdChange();
+  document.getElementById('clauseInput').value = nc.clause;
+  document.getElementById('rte_problem').innerHTML = nc.problem;
+
+  ['rte_evidence','rte_location','rte_extent','rte_rootcause','rte_correction','rte_preventive','rte_impact']
+    .forEach(rid => { const el = document.getElementById(rid); if (el) el.innerHTML = ''; });
+
+  clearFile();
+
+  document.getElementById('ncIdDisplay').textContent = id;
+  document.getElementById('ncInspectorDisplay').textContent = nc.inspector;
+  document.getElementById('ncInfoBar').style.display = 'flex';
+  document.getElementById('currentStatusBadge').textContent = 'กำลังดำเนินการ';
+  document.getElementById('currentStatusBadge').style.background = '#f39c12';
+  document.getElementById('submittedDateDisplay').textContent = '—';
+
+  document.querySelectorAll('.rte-content').forEach(el => el.setAttribute('contenteditable', 'true'));
+  document.querySelectorAll('.form-control:not(#ncSearchInput), .form-select').forEach(el => el.disabled = false);
+
+  document.querySelectorAll('#ncTableBody tr').forEach(tr => tr.removeAttribute('style'));
+  const row = document.getElementById('ncRow_' + id);
+  if (row) row.style.background = '#e8f4fd';
+
+  document.getElementById('ncInfoBar').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+    const round = parseInt(document.getElementById('roundSelect').value) || 1;
+    try {
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/cars_corrections?nc_id=eq.${id}&round=eq.${round}&order=updated_at.desc&limit=1`,
+        { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` } }
+      );
+      const rows = await r.json();
+      if (rows.length) {
+        const d = rows[0];
+        if (d.extent)     document.getElementById('rte_extent').innerHTML     = d.extent;
+        if (d.root_cause) document.getElementById('rte_rootcause').innerHTML  = d.root_cause;
+        if (d.correction) document.getElementById('rte_correction').innerHTML = d.correction;
+        if (d.preventive) document.getElementById('rte_preventive').innerHTML = d.preventive;
+        if (d.impact)     document.getElementById('rte_impact').innerHTML     = d.impact;
+        if (d.evidence)   document.getElementById('rte_evidence').innerHTML   = d.evidence;
+        if (d.location)   document.getElementById('rte_location').innerHTML   = d.location;
+        if (d.file_url) {
+          document.getElementById('uploadedFileUrl').value = d.file_url;
+          document.getElementById('fileNameText').textContent = d.file_name || 'ไฟล์แนบ';
+          document.getElementById('fileNameDisplay').style.display = 'block';
+          const lnk = document.getElementById('fileUrlLink');
+          lnk.href = d.file_url; lnk.style.display = 'inline';
+          document.getElementById('viewDocLink').href = d.file_url;
+          document.getElementById('viewDocSection').style.display = 'block';
+        }
+        const statusMap = { draft:'กำลังดำเนินการ', submitted:'รอผู้ตรวจพิจารณา', accepted:'ยอมรับแล้ว', rejected:'ส่งกลับแก้ไข' };
+        const colorMap  = { draft:'#f39c12', submitted:'#1a6faf', accepted:'#27ae60', rejected:'#e74c3c' };
+        if (statusMap[d.status]) {
+          document.getElementById('currentStatusBadge').textContent = statusMap[d.status];
+          document.getElementById('currentStatusBadge').style.background = colorMap[d.status];
+        }
+        if (d.submitted_at)
+          document.getElementById('submittedDateDisplay').textContent =
+            new Date(d.submitted_at).toLocaleDateString('th-TH');
+        showToast('โหลดข้อมูลที่บันทึกไว้แล้ว', '#27ae60');
+      }
+    } catch (e) { /* DB ยังไม่ configured หรือ network error */ }
+  }
+}
+
+// ═══════ VALIDATION ═══════
+function validateForm() {
+  let ok = true;
+  const checks = [
+    { rte: 'rte_problem', grp: 'grpProblem' },
+    { rte: 'rte_evidence', grp: 'grpEvidence' },
+    { rte: 'rte_location', grp: 'grpLocation' },
+  ];
+  checks.forEach(c => {
+    const el = document.getElementById(c.rte);
+    const grp = document.getElementById(c.grp);
+    const empty = el.innerText.trim() === '' && el.innerHTML === '';
+    grp.classList.toggle('is-invalid-custom', empty);
+    if (empty) ok = false;
+  });
+  return ok;
+}
+
+// ═══════ COLLECT FORM DATA ═══════
+function collectFormData() {
+  const nc = NC_DATA.find(n => n.id === currentNcId) || {};
+  return {
+    nc_id:      currentNcId,
+    round:      parseInt(document.getElementById('roundSelect').value) || 1,
+    inspector:  nc.inspector || '',
+    nc_type:    document.querySelector('input[name="ncType"]:checked')?.value || '',
+    standard:   document.getElementById('stdType').value,
+    clause:     document.getElementById('clauseInput').value,
+    problem:    document.getElementById('rte_problem').innerHTML,
+    extent:     document.getElementById('rte_extent').innerHTML,
+    root_cause: document.getElementById('rte_rootcause').innerHTML,
+    correction: document.getElementById('rte_correction').innerHTML,
+    preventive: document.getElementById('rte_preventive').innerHTML,
+    impact:     document.getElementById('rte_impact').innerHTML,
+    evidence:   document.getElementById('rte_evidence').innerHTML,
+    location:   document.getElementById('rte_location').innerHTML,
+    file_url:   document.getElementById('uploadedFileUrl').value,
+    file_name:  document.getElementById('fileNameText')?.textContent || '',
+  };
+}
+
+// ═══════ SAVE DRAFT ═══════
+async function saveDraft() {
+  if (!currentNcId) { showToast('กรุณาเลือก NC ก่อน', '#e74c3c'); return; }
+  if (!SUPABASE_URL || SUPABASE_URL === 'YOUR_SUPABASE_URL') {
+    showToast('บันทึกฉบับร่างสำเร็จ (local)', 'var(--primary)'); return;
+  }
+  try {
+    const payload = { ...collectFormData(), status: 'draft', updated_at: new Date().toISOString() };
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/cars_corrections`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showToast('บันทึกฉบับร่างสำเร็จ', 'var(--primary)');
+  } catch (err) {
+    showToast('บันทึกไม่สำเร็จ: ' + err.message, '#e74c3c');
+  }
+}
+
+// ═══════ SUBMIT ═══════
+function openSubmitModal() {
+  const clauseVal = document.getElementById('clauseInput').value;
+  const std = document.getElementById('stdType').options[document.getElementById('stdType').selectedIndex].text;
+  document.getElementById('clauseSummary').textContent = `${std} — ${clauseVal || '(ยังไม่เลือกข้อกำหนด)'}`;
+  new bootstrap.Modal(document.getElementById('modalSubmit')).show();
+}
+
+function doSubmit() {
+  if (!validateForm()) {
+    bootstrap.Modal.getInstance(document.getElementById('modalSubmit')).hide();
+    showToast('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน', '#e74c3c');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  bootstrap.Modal.getInstance(document.getElementById('modalSubmit')).hide();
+  document.getElementById('currentStatusBadge').textContent = 'รอผู้ตรวจพิจารณา';
+  document.getElementById('currentStatusBadge').style.background = '#1a6faf';
+  document.getElementById('submittedDateDisplay').textContent = new Date().toLocaleDateString('th-TH');
+  showToast('ส่งการแก้ไขให้ผู้ตรวจเรียบร้อยแล้ว');
+
+  if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+    const payload = {
+      ...collectFormData(),
+      status: 'submitted',
+      submitted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    fetch(`${SUPABASE_URL}/rest/v1/cars_corrections`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(payload),
+    }).catch(err => console.error('Submit save failed:', err));
+  }
+
+  // Disable form fields
+  document.querySelectorAll('.rte-content').forEach(el => el.setAttribute('contenteditable', 'false'));
+  document.querySelectorAll('.form-control, .form-select').forEach(el => el.disabled = true);
+}
+
+// ═══════ INSPECTOR REVIEW ═══════
+function acceptNC() {
+  bootstrap.Modal.getInstance(document.getElementById('modalInspector')).hide();
+  document.getElementById('currentStatusBadge').textContent = 'ยอมรับแล้ว';
+  document.getElementById('currentStatusBadge').style.background = '#27ae60';
+  showToast('ยอมรับการแก้ไข NC เรียบร้อยแล้ว');
+}
+
+function rejectNC() {
+  bootstrap.Modal.getInstance(document.getElementById('modalInspector')).hide();
+  document.getElementById('currentStatusBadge').textContent = 'ส่งกลับแก้ไข';
+  document.getElementById('currentStatusBadge').style.background = '#e74c3c';
+  showToast('ส่งกลับให้ปรับปรุงการแก้ไข', '#e74c3c');
+
+  // Re-enable editing
+  document.querySelectorAll('.rte-content').forEach(el => el.setAttribute('contenteditable', 'true'));
+  document.querySelectorAll('.form-control, .form-select').forEach(el => el.disabled = false);
+}
+
+// ═══════ TOAST ═══════
+function showToast(msg, color = 'var(--success)') {
+  const t = document.getElementById('toastMsg');
+  document.getElementById('toastText').textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════ DRAG & DROP for file ═══════
+const dropArea = document.querySelector('.file-upload-area');
+['dragenter','dragover'].forEach(e => dropArea.addEventListener(e, ev => {
+  ev.preventDefault(); dropArea.style.background = '#e8f4fd';
+}));
+['dragleave','drop'].forEach(e => dropArea.addEventListener(e, ev => {
+  ev.preventDefault(); dropArea.style.background = '';
+}));
+dropArea.addEventListener('drop', ev => {
+  const f = ev.dataTransfer.files[0];
+  if (f) {
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    const inp = document.getElementById('fileInput');
+    inp.files = dt.files;
+    handleFileSelect(inp);
+  }
+});
+
+// ═══════ INIT ═══════
+document.getElementById('submittedDateDisplay').textContent = '—';
+renderNCList(NC_DATA);
+loadNC(1);
+</script>
+
+</body>
+</html>
