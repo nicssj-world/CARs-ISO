@@ -2495,6 +2495,11 @@ initAuth(); // auth → applyFilters/loadNC/showPage เรียกใน onAut
       style="width:100%;background:linear-gradient(135deg,#1a6faf,#145a8c);color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s;box-shadow:0 4px 14px rgba(26,111,175,.35)">
       <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
     </button>
+    <button onclick="pendingPage=null;hideLoginScreen();showPage('home')"
+      style="width:100%;background:transparent;color:#64748b;border:1.5px solid #e2e8f0;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:10px;transition:background .15s,color .15s"
+      onmouseover="this.style.background='#f1f5f9';this.style.color='#334155'" onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+      <i class="fa-solid fa-house"></i> กลับหน้า HOME
+    </button>
     <p style="text-align:center;font-size:11.5px;color:#94a3b8;margin:16px 0 0">
       ใช้ E-Phis + รหัสผ่านเดียวกับระบบ Lab Management Portal
     </p>
