@@ -984,30 +984,38 @@
         <!-- File Attachment -->
         <div class="form-group-mb">
           <label class="form-label">เอกสารแนบประกอบ</label>
-          <div class="note-alert mb-2" style="font-size:12px">
-            <i class="fa-solid fa-circle-info me-1"></i>
-            หากมีหลายเอกสารแนบ กรุณา <strong>Zip</strong> ก่อนแนบ
-          </div>
-          <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
-            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.zip,.jpg,.png" onchange="handleFileSelect(this)">
-            <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-            <div style="font-size:13px;color:#666">คลิกหรือลากไฟล์มาวางที่นี่</div>
-            <div style="font-size:11px;color:#aaa;margin-top:4px">PDF, Word, ZIP, JPG, PNG · ไม่เกิน 100 MB</div>
-          </div>
-          <div id="uploadProgress" style="display:none;margin-top:8px">
-            <div class="progress" style="height:5px;border-radius:3px">
-              <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div>
+
+          <!-- Upload zone (edit mode) -->
+          <div id="uploadZoneWrapper">
+            <div class="note-alert mb-2" style="font-size:12px">
+              <i class="fa-solid fa-circle-info me-1"></i>
+              หากมีหลายเอกสารแนบ กรุณา <strong>Zip</strong> ก่อนแนบ
             </div>
-            <div style="font-size:11px;color:#888;margin-top:3px"><i class="fa-solid fa-spinner fa-spin me-1"></i>กำลังอัพโหลด...</div>
+            <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+              <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.zip,.jpg,.png" onchange="handleFileSelect(this)">
+              <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+              <div style="font-size:13px;color:#666">คลิกหรือลากไฟล์มาวางที่นี่</div>
+              <div style="font-size:11px;color:#aaa;margin-top:4px">PDF, Word, ZIP, JPG, PNG · ไม่เกิน 100 MB</div>
+            </div>
+            <div id="uploadProgress" style="display:none;margin-top:8px">
+              <div class="progress" style="height:5px;border-radius:3px">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width:100%"></div>
+              </div>
+              <div style="font-size:11px;color:#888;margin-top:3px"><i class="fa-solid fa-spinner fa-spin me-1"></i>กำลังอัพโหลด...</div>
+            </div>
+            <div class="file-name-display" id="fileNameDisplay">
+              <i class="fa-solid fa-paperclip me-1"></i><span id="fileNameText"></span>
+              <a id="fileUrlLink" href="#" target="_blank" rel="noopener"
+                 style="font-size:11px;margin-left:6px;color:var(--primary);display:none">
+                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>ดูไฟล์
+              </a>
+              <button type="button" onclick="clearFile()" style="border:none;background:none;color:var(--danger);cursor:pointer;margin-left:8px"><i class="fa-solid fa-xmark"></i></button>
+            </div>
           </div>
-          <div class="file-name-display" id="fileNameDisplay">
-            <i class="fa-solid fa-paperclip me-1"></i><span id="fileNameText"></span>
-            <a id="fileUrlLink" href="#" target="_blank" rel="noopener"
-               style="font-size:11px;margin-left:6px;color:var(--primary);display:none">
-              <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>ดูไฟล์
-            </a>
-            <button type="button" onclick="clearFile()" style="border:none;background:none;color:var(--danger);cursor:pointer;margin-left:8px"><i class="fa-solid fa-xmark"></i></button>
-          </div>
+
+          <!-- Locked file view (submitted/accepted) -->
+          <div id="lockedFileView" style="display:none"></div>
+
           <input type="hidden" id="uploadedFileUrl" value="">
         </div>
 
@@ -1154,6 +1162,7 @@ const R2_WORKER_URL     = 'https://cars-r2-upload.nics-siriwatj.workers.dev';
 // SQL ที่ต้องรันใน Supabase Dashboard ก่อนใช้งาน saved_by / submitted_by:
 //   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS saved_by TEXT;
 //   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS submitted_by TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS submitted_by_id UUID;
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null; // { id, name, email, role }
 let _appStarted = false;
@@ -1873,7 +1882,7 @@ async function loadNC(id) {
           document.getElementById('currentStatusBadge').style.background = colorMap[d.status];
         }
         // Lock form if already submitted or accepted
-        if (['submitted','accepted'].includes(d.status)) lockNCForm();
+        if (['submitted','accepted'].includes(d.status)) lockNCForm(d.submitted_by_id);
         if (d.submitted_at)
           document.getElementById('submittedDateDisplay').textContent =
             new Date(d.submitted_at).toLocaleDateString('th-TH');
@@ -1940,13 +1949,31 @@ async function saveDraft() {
 }
 
 // ═══════ FORM LOCK / UNLOCK HELPERS ═══════
-function lockNCForm() {
+function lockNCForm(submittedById) {
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable','false'));
   document.querySelectorAll('.form-control:not(#ncSearchInput), .form-select').forEach(el => el.disabled = true);
   const btnDone = document.getElementById('btn-submit-done');
   if (btnDone) { btnDone.disabled = true; btnDone.style.opacity = '0.5'; }
   const btnReopen = document.getElementById('btn-reopen');
-  if (btnReopen) btnReopen.style.display = 'inline-flex';
+  if (btnReopen) {
+    const canReopen = currentUser?.role === 'Admin' || currentUser?.id === submittedById;
+    btnReopen.style.display = canReopen ? 'inline-flex' : 'none';
+  }
+
+  // Switch to read-only file view
+  const url  = document.getElementById('uploadedFileUrl').value;
+  const name = document.getElementById('fileNameText').textContent || 'ไฟล์แนบ';
+  document.getElementById('uploadZoneWrapper').style.display = 'none';
+  const view = document.getElementById('lockedFileView');
+  view.style.display = '';
+  view.innerHTML = url
+    ? `<a href="${url}" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#f9fafb;font-size:13px;color:var(--primary);text-decoration:none;transition:background .15s"
+         onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f9fafb'">
+         <i class="fa-solid fa-file-arrow-down" style="font-size:16px"></i>
+         <span>${name}</span>
+       </a>`
+    : `<span style="font-size:13px;color:#aaa"><i class="fa-solid fa-paperclip me-1"></i>ไม่มีเอกสารแนบ</span>`;
 }
 
 function unlockNCForm() {
@@ -1956,6 +1983,11 @@ function unlockNCForm() {
   if (btnDone) { btnDone.disabled = false; btnDone.style.opacity = '1'; }
   const btnReopen = document.getElementById('btn-reopen');
   if (btnReopen) btnReopen.style.display = 'none';
+
+  // Restore upload zone
+  document.getElementById('uploadZoneWrapper').style.display = '';
+  document.getElementById('lockedFileView').style.display = 'none';
+  document.getElementById('lockedFileView').innerHTML = '';
 }
 
 async function reopenNC() {
@@ -1986,6 +2018,7 @@ async function doSubmitDone() {
     submitted_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     submitted_by: currentUser?.name || '',
+    submitted_by_id: currentUser?.id || null,
   };
 
   try {
@@ -2003,7 +2036,7 @@ async function doSubmitDone() {
 
   _liveStatus[currentNcId] = 'submitted';
   applyFilters();
-  lockNCForm();
+  lockNCForm(currentUser?.id);
   showSavedBy(currentUser?.name);
   showToast('ส่งเสร็จแล้ว — บันทึกโดย ' + (currentUser?.name || 'ไม่ระบุ'), '#16a34a');
 }
@@ -2036,6 +2069,7 @@ function doSubmit() {
     submitted_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     submitted_by: currentUser?.name || '',
+    submitted_by_id: currentUser?.id || null,
   };
   sbClient.from('cars_corrections').upsert(_submitPayload, { onConflict: 'nc_id' })
     .then(({ error }) => { if (error) console.error('Submit save failed:', error.message); });
@@ -2249,7 +2283,7 @@ async function loadInspectorDashboard() {
         <span class="nc-chip" style="background:${lbl.bg};color:${lbl.color}">${lbl.txt}</span>
         <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:12px">
           ${e.accepted  ? `<span class="nc-chip" style="background:#dcfce7;color:#16a34a">${e.accepted} ยอมรับ</span>` : ''}
-          ${e.submitted ? `<span class="nc-chip" style="background:#eff6ff;color:#1e5fa0">${e.submitted} รอพิจารณา</span>` : ''}
+          ${e.submitted ? `<span class="nc-chip" style="background:#eff6ff;color:#1e5fa0">${e.submitted} ส่งแล้ว</span>` : ''}
           ${e.draft     ? `<span class="nc-chip" style="background:#fffbeb;color:#d97706">${e.draft} ดำเนินการ</span>` : ''}
           ${e.pending   ? `<span class="nc-chip" style="background:#f1f5f9;color:#64748b">${e.pending} รอบันทึก</span>` : ''}
         </div>`;
