@@ -1,12 +1,8 @@
 name = "cars-r2-upload"
 main = "worker.js"
 compatibility_date = "2024-01-01"
+workers_dev = true
 
-# R2 bucket binding — ใช้ bucket "lab-documents" ที่มีอยู่แล้ว
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "lab-documents"
-
-# Public URL ของ bucket (เปิด Settings → Public Access ใน R2 dashboard แล้วก็อป URL มาใส่)
-[vars]
-R2_PUBLIC_DOMAIN = "YOUR_R2_PUBLIC_DOMAIN"
