@@ -1036,7 +1036,7 @@
         <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
       </a>
       <div class="btn-group" style="display:flex;gap:10px">
-        <button type="button" class="btn-primary-custom" onclick="saveDraft()">
+        <button type="button" id="btn-save-draft" class="btn-primary-custom" onclick="saveDraft()">
           <i class="fa-solid fa-floppy-disk"></i> บันทึกการแก้ไข
         </button>
         <button type="button" id="btn-submit-done" class="btn-success-custom" onclick="confirmSubmit()">
@@ -1952,6 +1952,8 @@ async function saveDraft() {
 function lockNCForm(submittedById) {
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable','false'));
   document.querySelectorAll('.form-control:not(#ncSearchInput), .form-select').forEach(el => el.disabled = true);
+  const btnSave = document.getElementById('btn-save-draft');
+  if (btnSave) btnSave.style.display = 'none';
   const btnDone = document.getElementById('btn-submit-done');
   if (btnDone) { btnDone.disabled = true; btnDone.style.opacity = '0.5'; }
   const btnReopen = document.getElementById('btn-reopen');
@@ -1979,6 +1981,8 @@ function lockNCForm(submittedById) {
 function unlockNCForm() {
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable','true'));
   document.querySelectorAll('.form-control, .form-select').forEach(el => el.disabled = false);
+  const btnSave = document.getElementById('btn-save-draft');
+  if (btnSave) btnSave.style.display = '';
   const btnDone = document.getElementById('btn-submit-done');
   if (btnDone) { btnDone.disabled = false; btnDone.style.opacity = '1'; }
   const btnReopen = document.getElementById('btn-reopen');
