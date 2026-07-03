@@ -1178,7 +1178,7 @@ function isAdminUser() {
   const role = (currentUser?.role || '').trim().toLowerCase();
   const email = (currentUser?.email || '').trim().toLowerCase();
   const adminRoles = ['admin', 'administrator', 'super_admin', 'super admin', 'owner', 'ผู้ดูแล', 'ผู้ดูแลระบบ'];
-  const adminEmails = ['nics.siriwatj@gmail.com'];
+  const adminEmails = ['nics.siriwatj@gmail.com', '9495@cbh.go.th'];
   return adminRoles.includes(role) || role.includes('admin') || adminEmails.includes(email);
 }
 
