@@ -1169,6 +1169,10 @@ let _appStarted = false;
 let _ncDataLoaded = false;
 let pendingPage = null; // page to navigate to after login
 
+function isAdminUser() {
+  return (currentUser?.role || '').trim().toLowerCase() === 'admin';
+}
+
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
   if (session) {
@@ -1699,6 +1703,16 @@ function renderNCList(data) {
     const dbStatus = _liveStatus[nc.id];
     const status = dbStatus ? (STATUS_LABEL[dbStatus] || dbStatus) : 'รอการบันทึกแก้ไข';
     const { bg: stBg, clr: stClr } = STATUS_STYLE[dbStatus] || STATUS_STYLE.default;
+    const adminSubmittedToggle = isAdminUser() ? `
+        <label style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:10.5px;color:#475569;cursor:${dbStatus === 'accepted' ? 'not-allowed' : 'pointer'}">
+          <input type="checkbox"
+            ${['submitted','accepted'].includes(dbStatus) ? 'checked' : ''}
+            ${dbStatus === 'accepted' ? 'disabled' : ''}
+            onclick="event.stopPropagation()"
+            onchange="toggleAdminSubmitted(${nc.id}, this.checked, this)"
+            style="width:13px;height:13px;margin:0">
+          <span>Admin submit</span>
+        </label>` : '';
     return `<tr id="ncRow_${nc.id}"${act}>
       <td style="font-weight:700;color:#777;white-space:nowrap">${nc.id}</td>
       <td style="font-size:12px">${nc.inspector}</td>
@@ -1710,6 +1724,7 @@ function renderNCList(data) {
       <td style="font-size:11.5px;color:#444;line-height:1.55;min-width:280px">${probShort}</td>
       <td style="white-space:nowrap">
         <span style="background:${stBg};color:${stClr};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600">${status}</span>
+        ${adminSubmittedToggle}
       </td>
       <td style="white-space:nowrap;display:flex;gap:5px">
         <button type="button" onclick="showNCDetail(${nc.id})"
@@ -1745,9 +1760,74 @@ async function fetchLiveStatuses() {
       .order('updated_at', { ascending: false })
       .limit(500);
     if (error) throw error;
-    rows.forEach(row => { if (!_liveStatus[row.nc_id]) _liveStatus[row.nc_id] = row.status; });
+    const seen = new Set();
+    rows.forEach(row => {
+      if (seen.has(row.nc_id)) return;
+      _liveStatus[row.nc_id] = row.status;
+      seen.add(row.nc_id);
+    });
     applyFilters();
   } catch(e) {}
+}
+
+async function toggleAdminSubmitted(ncId, checked, checkboxEl) {
+  if (!isAdminUser()) {
+    if (checkboxEl) checkboxEl.checked = !checked;
+    showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c');
+    return;
+  }
+
+  const previousStatus = _liveStatus[ncId];
+  if (previousStatus === 'accepted') {
+    if (checkboxEl) checkboxEl.checked = true;
+    showToast('รายการที่ยอมรับแล้วไม่สามารถเปลี่ยนผ่าน checkbox นี้ได้', '#e74c3c');
+    return;
+  }
+
+  if (checkboxEl) checkboxEl.disabled = true;
+  const now = new Date().toISOString();
+  const nextStatus = checked ? 'submitted' : 'draft';
+  const payload = {
+    ...collectNCBaseData(ncId),
+    status: nextStatus,
+    updated_at: now,
+    submitted_at: checked ? now : null,
+    submitted_by: checked ? (currentUser?.name || '') : '',
+    submitted_by_id: checked ? (currentUser?.id || null) : null,
+  };
+
+  try {
+    const { error } = await sbClient.from('cars_corrections').upsert(payload, { onConflict: 'nc_id' });
+    if (error) throw error;
+
+    _liveStatus[ncId] = nextStatus;
+    applyFilters();
+
+    if (currentNcId === ncId) {
+      const badge = document.getElementById('currentStatusBadge');
+      if (checked) {
+        badge.textContent = STATUS_LABEL.submitted;
+        badge.style.background = '#16a34a';
+        document.getElementById('submittedDateDisplay').textContent = new Date().toLocaleDateString('th-TH');
+        showSavedBy(currentUser?.name);
+        lockNCForm(currentUser?.id);
+      } else {
+        badge.textContent = STATUS_LABEL.draft;
+        badge.style.background = '#f39c12';
+        document.getElementById('submittedDateDisplay').textContent = '—';
+        unlockNCForm();
+      }
+    }
+
+    showToast(checked ? 'Admin marked this NC as Submitted' : 'Admin unchecked Submitted status', checked ? '#16a34a' : '#f59e0b');
+  } catch (err) {
+    if (checkboxEl) {
+      checkboxEl.disabled = false;
+      checkboxEl.checked = !checked;
+    }
+    _liveStatus[ncId] = previousStatus;
+    showToast('บันทึกสถานะไม่สำเร็จ: ' + err.message, '#e74c3c');
+  }
 }
 
 function setTypeFilter(val) {
@@ -1802,12 +1882,16 @@ function showNCDetail(id) {
   const nc = NC_DATA.find(n => n.id === id);
   if (!nc) return;
   const stdLbl = nc.stdType === '15190' ? 'ISO 15190' : 'ISO 15189';
+  const dbStatus = _liveStatus[id];
+  const status = dbStatus ? (STATUS_LABEL[dbStatus] || dbStatus) : 'รอการบันทึกแก้ไข';
+  const { bg: stBg, clr: stClr } = STATUS_STYLE[dbStatus] || STATUS_STYLE.default;
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:12px;width:100%;max-width:680px;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">
       <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px">
         <strong style="font-size:15px">NC #${nc.id} — รายละเอียดปัญหาที่พบ</strong>
+        <span style="background:${stBg};color:${stClr};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700">${status}</span>
         <span style="margin-left:auto;background:#eee;padding:2px 9px;border-radius:8px;font-size:12px">${stdLbl} · ${nc.ncType}</span>
         <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888;line-height:1">&times;</button>
       </div>
@@ -1908,16 +1992,22 @@ function validateForm() {
 }
 
 // ═══════ COLLECT FORM DATA ═══════
-function collectFormData() {
-  const nc = NC_DATA.find(n => n.id === currentNcId) || {};
+function collectNCBaseData(ncId) {
+  const nc = NC_DATA.find(n => n.id === ncId) || {};
   return {
-    nc_id:      currentNcId,
+    nc_id:      ncId,
     round:      1,
     inspector:  nc.inspector || '',
     nc_type:    nc.ncType || '',
     standard:   nc.stdType || '',
     clause:     nc.clause || '',
     problem:    nc.problem || '',
+  };
+}
+
+function collectFormData() {
+  return {
+    ...collectNCBaseData(currentNcId),
     extent:     document.getElementById('rte_extent').innerHTML,
     root_cause: document.getElementById('rte_rootcause').innerHTML,
     correction: document.getElementById('rte_correction').innerHTML,
