@@ -1177,9 +1177,17 @@ let pendingPage = null; // page to navigate to after login
 function isAdminUser() {
   const role = (currentUser?.role || '').trim().toLowerCase();
   const email = (currentUser?.email || '').trim().toLowerCase();
+  const name = (currentUser?.name || '').trim().toLowerCase();
+  const employeeId = (currentUser?.employeeId || '').trim();
   const adminRoles = ['admin', 'administrator', 'super_admin', 'super admin', 'owner', 'ผู้ดูแล', 'ผู้ดูแลระบบ'];
   const adminEmails = ['nics.siriwatj@gmail.com', '9495@cbh.go.th'];
-  return adminRoles.includes(role) || role.includes('admin') || adminEmails.includes(email);
+  const adminEmployeeIds = ['9495'];
+  const adminNameParts = ['ศิริวัฒน์'];
+  return adminRoles.includes(role)
+    || role.includes('admin')
+    || adminEmails.includes(email)
+    || adminEmployeeIds.includes(employeeId)
+    || adminNameParts.some(part => name.includes(part));
 }
 
 async function initAuth() {
@@ -1213,12 +1221,13 @@ async function initAuth() {
 
 async function onAuthSuccess(user) {
   let name = user.email;
+  const employeeId = sessionStorage.getItem('lastLoginEphis') || (user.email || '').split('@')[0] || '';
   try {
     const { data } = await sbClient.from('profiles').select('name, role').eq('id', user.id).single();
     if (data?.name) name = data.name;
-    currentUser = { id: user.id, email: user.email, name, role: data?.role || '' };
+    currentUser = { id: user.id, email: user.email, name, role: data?.role || '', employeeId };
   } catch {
-    currentUser = { id: user.id, email: user.email, name, role: '' };
+    currentUser = { id: user.id, email: user.email, name, role: '', employeeId };
   }
   updateUserBadge(currentUser);
   hideLoginScreen();
@@ -1245,6 +1254,7 @@ async function doLogin() {
   }
   // แปลง E-Phis → email เหมือน lab-management-portal
   const email = raw.includes('@') ? raw : `${raw}@cbh.go.th`;
+  if (!raw.includes('@')) sessionStorage.setItem('lastLoginEphis', raw);
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
   errEl.style.display = 'none';
