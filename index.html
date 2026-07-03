@@ -1190,6 +1190,43 @@ function isAdminUser() {
     || adminNameParts.some(part => name.includes(part));
 }
 
+// ─── VIEW-ONLY USERS (read-only access, no edit/save/submit) ───
+const VIEW_ONLY_EMPLOYEE_IDS = ['11050'];
+const VIEW_ONLY_EMAILS = ['11050@cbh.go.th'];
+function isViewOnlyUser() {
+  const employeeId = (currentUser?.employeeId || '').trim();
+  const email = (currentUser?.email || '').trim().toLowerCase();
+  return VIEW_ONLY_EMPLOYEE_IDS.includes(employeeId) || VIEW_ONLY_EMAILS.includes(email);
+}
+
+// Lock the NC form for view-only users: no editing, save/submit/reopen buttons hidden
+function applyViewOnlyMode() {
+  document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable', 'false'));
+  document.querySelectorAll('.form-control:not(#ncSearchInput), .form-select').forEach(el => el.disabled = true);
+
+  const btnSave = document.getElementById('btn-save-draft');
+  if (btnSave) btnSave.style.display = 'none';
+  const btnDone = document.getElementById('btn-submit-done');
+  if (btnDone) btnDone.style.display = 'none';
+  const btnReopen = document.getElementById('btn-reopen');
+  if (btnReopen) btnReopen.style.display = 'none';
+
+  // Switch to read-only file view (if not already switched by lockNCForm)
+  const wrapper = document.getElementById('uploadZoneWrapper');
+  if (wrapper && wrapper.style.display !== 'none') {
+    const url  = document.getElementById('uploadedFileUrl').value;
+    const name = document.getElementById('fileNameText').textContent || 'ไฟล์แนบ';
+    wrapper.style.display = 'none';
+    const view = document.getElementById('lockedFileView');
+    view.style.display = '';
+    view.innerHTML = url
+      ? `<a href="${url}" target="_blank" rel="noopener"
+           style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#f9fafb;font-size:13px;color:var(--primary);text-decoration:none"
+           ><i class="fa-solid fa-file-arrow-down" style="font-size:16px"></i><span>${name}</span></a>`
+      : `<span style="font-size:13px;color:#aaa"><i class="fa-solid fa-paperclip me-1"></i>ไม่มีเอกสารแนบ</span>`;
+  }
+}
+
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
   if (session) {
@@ -2000,6 +2037,8 @@ async function loadNC(id) {
         showToast('โหลดข้อมูลที่บันทึกไว้แล้ว', '#27ae60');
       }
   } catch (e) { /* network error */ }
+
+  if (isViewOnlyUser()) applyViewOnlyMode();
 }
 
 // ═══════ VALIDATION ═══════
