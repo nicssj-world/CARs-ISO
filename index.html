@@ -1798,6 +1798,7 @@ async function fetchLiveStatuses() {
       seen.add(row.nc_id);
     });
     applyFilters();
+    updateHomeSubmittedProgress();
   } catch(e) {}
 }
 
@@ -1827,6 +1828,7 @@ async function toggleAdminSubmitted(ncId, checked, checkboxEl) {
 
     _adminSubmitted[ncId] = checked;
     applyFilters();
+    updateHomeSubmittedProgress();
 
     if (currentNcId === ncId) {
       updateAdminSubmittedBadge(checked);
@@ -2508,6 +2510,7 @@ function showPage(page) {
     { num: iso89,          label: 'ISO 15189',         icon: 'fa-flask',               color: '#7c3aed', bg: '#f5f3ff' },
     { num: iso90,          label: 'ISO 15190',         icon: 'fa-shield-halved',       color: '#0e7490', bg: '#ecfeff' },
     { num: typeC,          label: 'ประเภท C (Major)',  icon: 'fa-triangle-exclamation',color: '#dc2626', bg: '#fef2f2' },
+    { num: '0%',           label: 'Submitted จาก CAR ทั้งหมด', icon: 'fa-clipboard-check', color: '#16a34a', bg: '#dcfce7', submittedProgress: true },
   ];
 
   const grid = document.getElementById('home-stats-grid');
@@ -2516,11 +2519,47 @@ function showPage(page) {
     div.className = 'home-stat-card';
     div.innerHTML = `
       <div class="home-stat-icon" style="color:${c.color}"><i class="fa-solid ${c.icon}"></i></div>
-      <div class="home-stat-num" style="color:${c.color}">${c.num}</div>
-      <div class="home-stat-label">${c.label}</div>`;
+      <div class="home-stat-num" style="color:${c.color}"${c.submittedProgress ? ' id="homeSubmittedPct"' : ''}>${c.num}</div>
+      <div class="home-stat-label">${c.label}</div>
+      ${c.submittedProgress ? `
+        <div id="homeSubmittedCount" style="font-size:11.5px;color:#64748b;margin-top:8px;font-weight:700">0/${NC_DATA.length} รายการ</div>
+        <div style="height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:9px">
+          <div id="homeSubmittedBar" style="height:100%;width:0%;background:#16a34a;border-radius:99px;transition:width .35s ease"></div>
+        </div>` : ''}`;
     grid.appendChild(div);
   });
+  updateHomeSubmittedProgress();
 })();
+
+async function updateHomeSubmittedProgress() {
+  const total = NC_DATA.length;
+  let submitted = 0;
+  try {
+    const validIds = new Set(NC_DATA.map(nc => nc.id));
+    const { data: rows, error } = await sbClient
+      .from('cars_corrections')
+      .select('nc_id, admin_submitted')
+      .order('updated_at', { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    const seen = new Set();
+    (rows || []).forEach(row => {
+      if (seen.has(row.nc_id) || !validIds.has(row.nc_id)) return;
+      seen.add(row.nc_id);
+      if (row.admin_submitted) submitted += 1;
+    });
+  } catch(e) {
+    submitted = Object.entries(_adminSubmitted).filter(([id, val]) => val && NC_DATA.some(nc => String(nc.id) === String(id))).length;
+  }
+
+  const pct = total ? Math.round((submitted / total) * 100) : 0;
+  const pctEl = document.getElementById('homeSubmittedPct');
+  const countEl = document.getElementById('homeSubmittedCount');
+  const barEl = document.getElementById('homeSubmittedBar');
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (countEl) countEl.textContent = `${submitted}/${total} รายการ`;
+  if (barEl) barEl.style.width = pct + '%';
+}
 
 // ═══════ INIT ═══════
 document.getElementById('submittedDateDisplay').textContent = '—';
