@@ -1170,7 +1170,11 @@ let _ncDataLoaded = false;
 let pendingPage = null; // page to navigate to after login
 
 function isAdminUser() {
-  return (currentUser?.role || '').trim().toLowerCase() === 'admin';
+  const role = (currentUser?.role || '').trim().toLowerCase();
+  const email = (currentUser?.email || '').trim().toLowerCase();
+  const adminRoles = ['admin', 'administrator', 'super_admin', 'super admin', 'owner', 'ผู้ดูแล', 'ผู้ดูแลระบบ'];
+  const adminEmails = ['nics.siriwatj@gmail.com'];
+  return adminRoles.includes(role) || role.includes('admin') || adminEmails.includes(email);
 }
 
 async function initAuth() {
