@@ -1654,6 +1654,12 @@ document.querySelectorAll('input[name="ncType"]').forEach(r => {
 
 
 // ═══════ FILE UPLOAD + R2 ═══════
+// แนบชื่อไฟล์เดิมไปกับ URL ดาวน์โหลด เพื่อให้ไฟล์เก่า (ที่ไม่มี metadata) ได้ชื่อถูกต้อง
+function fileUrlWithName(url, name) {
+  if (!url || !name) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'name=' + encodeURIComponent(name);
+}
+
 async function handleFileSelect(input) {
   if (!input.files.length) return;
   const file = input.files[0];
@@ -1678,10 +1684,11 @@ async function handleFileSelect(input) {
     const res = await fetch(R2_WORKER_URL, { method: 'POST', body: form });
     if (!res.ok) throw new Error((await res.text()) || 'Upload failed');
     const { url } = await res.json();
+    const dlUrl = fileUrlWithName(url, file.name);
     document.getElementById('uploadedFileUrl').value = url;
     const lnk = document.getElementById('fileUrlLink');
-    lnk.href = url; lnk.style.display = 'inline';
-    document.getElementById('viewDocLink').href = url;
+    lnk.href = dlUrl; lnk.style.display = 'inline';
+    document.getElementById('viewDocLink').href = dlUrl;
     document.getElementById('viewDocSection').style.display = 'block';
     document.getElementById('fileNameDisplay').style.display = 'block';
     showToast('อัพโหลดไฟล์สำเร็จ');
@@ -1976,12 +1983,13 @@ async function loadNC(id) {
         if (d.preventive) document.getElementById('rte_preventive').innerHTML = d.preventive;
         if (d.impact)     document.getElementById('rte_impact').innerHTML     = d.impact;
         if (d.file_url) {
+          const dlUrl = fileUrlWithName(d.file_url, d.file_name);
           document.getElementById('uploadedFileUrl').value = d.file_url;
           document.getElementById('fileNameText').textContent = d.file_name || 'ไฟล์แนบ';
           document.getElementById('fileNameDisplay').style.display = 'block';
           const lnk = document.getElementById('fileUrlLink');
-          lnk.href = d.file_url; lnk.style.display = 'inline';
-          document.getElementById('viewDocLink').href = d.file_url;
+          lnk.href = dlUrl; lnk.style.display = 'inline';
+          document.getElementById('viewDocLink').href = dlUrl;
           document.getElementById('viewDocSection').style.display = 'block';
         }
         const statusMap = { draft:'กำลังดำเนินการ', submitted:'ส่งเสร็จแล้ว', accepted:'ยอมรับแล้ว', rejected:'ส่งกลับแก้ไข' };
@@ -2080,11 +2088,12 @@ function lockNCForm(submittedById) {
   // Switch to read-only file view
   const url  = document.getElementById('uploadedFileUrl').value;
   const name = document.getElementById('fileNameText').textContent || 'ไฟล์แนบ';
+  const dlUrl = fileUrlWithName(url, name);
   document.getElementById('uploadZoneWrapper').style.display = 'none';
   const view = document.getElementById('lockedFileView');
   view.style.display = '';
   view.innerHTML = url
-    ? `<a href="${url}" target="_blank" rel="noopener"
+    ? `<a href="${dlUrl}" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#f9fafb;font-size:13px;color:var(--primary);text-decoration:none;transition:background .15s"
          onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f9fafb'">
          <i class="fa-solid fa-file-arrow-down" style="font-size:16px"></i>

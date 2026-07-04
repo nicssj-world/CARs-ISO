@@ -10,6 +10,12 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+// สร้าง Content-Disposition ที่คงชื่อไฟล์เดิมไว้ รองรับชื่อ non-ASCII (ไทย) ด้วย RFC 5987
+function contentDisposition(name, type = 'inline') {
+  const fallback = (name || 'file').replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_') || 'file';
+  return `${type}; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(name || 'file')}`;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
@@ -26,8 +32,10 @@ export default {
 
       const headers = new Headers(CORS);
       headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
-      const filename = key.split('/').pop();
-      headers.set('Content-Disposition', `inline; filename="${filename}"`);
+      // คงชื่อไฟล์เดิม: ?name= override → customMetadata.originalName → basename ของ key
+      const nameParam = new URL(request.url).searchParams.get('name');
+      const filename = nameParam || object.customMetadata?.originalName || key.split('/').pop();
+      headers.set('Content-Disposition', contentDisposition(filename));
       return new Response(object.body, { status: 200, headers });
     }
 
@@ -53,6 +61,7 @@ export default {
       try {
         await env.BUCKET.put(key, file.stream(), {
           httpMetadata: { contentType: file.type || 'application/octet-stream' },
+          customMetadata: { originalName: file.name },
         });
       } catch (err) {
         return new Response(`R2 put failed: ${err.message}`, { status: 500, headers: CORS });
