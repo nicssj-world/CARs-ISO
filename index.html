@@ -1702,6 +1702,7 @@ async function handleFileSelect(input) {
 
 function clearFile() {
   document.getElementById('fileInput').value = '';
+  document.getElementById('fileNameText').textContent = '';
   document.getElementById('fileNameDisplay').style.display = 'none';
   document.getElementById('uploadProgress').style.display = 'none';
   document.getElementById('uploadedFileUrl').value = '';
@@ -1973,6 +1974,10 @@ async function loadNC(id) {
       .order('updated_at', { ascending: false })
       .limit(1);
     if (error) throw error;
+    // Guard against stale responses: if the user has switched to another NC
+    // while this fetch was in flight, discard it so it can't overwrite the
+    // current item's form (e.g. leaving a previous item's attachment showing).
+    if (id !== currentNcId) return;
     if (rows && rows.length) {
         const d = rows[0];
         _adminSubmitted[id] = !!d.admin_submitted;
