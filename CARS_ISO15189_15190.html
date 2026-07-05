@@ -1940,6 +1940,10 @@ async function loadNC(id) {
     .forEach(rid => { const el = document.getElementById(rid); if (el) el.innerHTML = ''; });
 
   clearFile();
+  // Reset to the unlocked/editable state: clears any locked file view left
+  // over from a previously opened (submitted/accepted) NC and restores the
+  // upload zone. Without this, a prior item's attachment stays on screen.
+  unlockNCForm();
 
   document.getElementById('savedByTag').style.display = 'none';
   document.getElementById('ncIdDisplay').textContent = id;
