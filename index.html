@@ -1840,6 +1840,13 @@ async function toggleAdminSubmitted(ncId, checked, checkboxEl) {
 
     if (currentNcId === ncId) {
       updateAdminSubmittedBadge(checked);
+      // Lock/unlock the open form to match the Submitted state so the user
+      // can't edit once Admin has submitted it.
+      if (checked) {
+        lockNCForm(null, true);
+      } else if (!['submitted','accepted'].includes(_liveStatus[ncId])) {
+        unlockNCForm();
+      }
     }
 
     showToast(checked ? 'Marked Submitted' : 'Unchecked Submitted', checked ? '#16a34a' : '#f59e0b');
@@ -2007,8 +2014,10 @@ async function loadNC(id) {
           document.getElementById('currentStatusBadge').textContent = statusMap[d.status];
           document.getElementById('currentStatusBadge').style.background = colorMap[d.status];
         }
-        // Lock form if already submitted or accepted
-        if (['submitted','accepted'].includes(d.status)) lockNCForm(d.submitted_by_id);
+        // Lock form if already submitted/accepted, or once Admin marked it Submitted
+        const adminLocked = !!d.admin_submitted;
+        if (adminLocked || ['submitted','accepted'].includes(d.status))
+          lockNCForm(d.submitted_by_id, adminLocked);
         if (d.submitted_at)
           document.getElementById('submittedDateDisplay').textContent =
             new Date(d.submitted_at).toLocaleDateString('th-TH');
@@ -2081,7 +2090,7 @@ async function saveDraft() {
 }
 
 // ═══════ FORM LOCK / UNLOCK HELPERS ═══════
-function lockNCForm(submittedById) {
+function lockNCForm(submittedById, adminOnlyReopen = false) {
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable','false'));
   document.querySelectorAll('.form-control:not(#ncSearchInput), .form-select').forEach(el => el.disabled = true);
   const btnSave = document.getElementById('btn-save-draft');
@@ -2090,7 +2099,10 @@ function lockNCForm(submittedById) {
   if (btnDone) { btnDone.disabled = true; btnDone.style.opacity = '0.5'; }
   const btnReopen = document.getElementById('btn-reopen');
   if (btnReopen) {
-    const canReopen = currentUser?.role === 'Admin' || currentUser?.id === submittedById;
+    // When locked because Admin marked it Submitted, only an Admin may reopen —
+    // the lab user who filled the form must not be able to edit anymore.
+    const canReopen = currentUser?.role === 'Admin'
+      || (!adminOnlyReopen && currentUser?.id === submittedById);
     btnReopen.style.display = canReopen ? 'inline-flex' : 'none';
   }
 
