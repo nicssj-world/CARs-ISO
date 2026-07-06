@@ -94,6 +94,33 @@
     .home-stat-icon { font-size: 22px; margin-bottom: 10px; }
     .home-stat-num { font-size: 38px; font-weight: 800; line-height: 1; }
     .home-stat-label { font-size: 12px; color: #64748b; margin-top: 5px; font-weight: 500; }
+    .home-stat-card--featured {
+      grid-column: 1 / -1; order: -1;
+      display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
+      padding: 28px 32px;
+      background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+      border: 2px solid #16a34a;
+      box-shadow: 0 10px 30px rgba(22,163,74,.22);
+      position: relative;
+      animation: featuredGlow 2.6s ease-in-out infinite;
+    }
+    @keyframes featuredGlow {
+      0%, 100% { box-shadow: 0 10px 30px rgba(22,163,74,.22); }
+      50% { box-shadow: 0 10px 34px rgba(22,163,74,.4); }
+    }
+    .home-stat-card--featured:hover { transform: none; }
+    .home-stat-card--featured .home-stat-icon-wrap {
+      width: 68px; height: 68px; border-radius: 18px; background:#16a34a; color:#fff;
+      display:flex; align-items:center; justify-content:center; font-size:30px; flex-shrink:0;
+      box-shadow: 0 6px 18px rgba(22,163,74,.4);
+    }
+    .home-stat-card--featured .home-stat-body { flex: 1; min-width: 220px; }
+    .home-stat-card--featured .home-stat-num { font-size: 56px; }
+    .home-stat-card--featured .home-stat-label { font-size: 14px; font-weight: 700; color: #166534; }
+    @media (max-width: 640px) {
+      .home-stat-card--featured { padding: 22px 20px; }
+      .home-stat-card--featured .home-stat-num { font-size: 44px; }
+    }
 
     /* ─── INSPECTOR DASHBOARD ─── */
     .inspector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 20px; }
@@ -2546,16 +2573,20 @@ function showPage(page) {
   const grid = document.getElementById('home-stats-grid');
   cards.forEach(c => {
     const div = document.createElement('div');
-    div.className = 'home-stat-card';
-    div.innerHTML = `
+    div.className = c.submittedProgress ? 'home-stat-card home-stat-card--featured' : 'home-stat-card';
+    div.innerHTML = c.submittedProgress ? `
+      <div class="home-stat-icon-wrap"><i class="fa-solid ${c.icon}"></i></div>
+      <div class="home-stat-body">
+        <div class="home-stat-num" style="color:${c.color}" id="homeSubmittedPct">${c.num}</div>
+        <div class="home-stat-label">${c.label}</div>
+        <div id="homeSubmittedCount" style="font-size:12.5px;color:#166534;margin-top:8px;font-weight:700">0/${NC_DATA.length} รายการ</div>
+        <div style="height:9px;background:#bbf7d0;border-radius:99px;overflow:hidden;margin-top:9px">
+          <div id="homeSubmittedBar" style="height:100%;width:0%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:99px;transition:width .35s ease"></div>
+        </div>
+      </div>` : `
       <div class="home-stat-icon" style="color:${c.color}"><i class="fa-solid ${c.icon}"></i></div>
-      <div class="home-stat-num" style="color:${c.color}"${c.submittedProgress ? ' id="homeSubmittedPct"' : ''}>${c.num}</div>
-      <div class="home-stat-label">${c.label}</div>
-      ${c.submittedProgress ? `
-        <div id="homeSubmittedCount" style="font-size:11.5px;color:#64748b;margin-top:8px;font-weight:700">0/${NC_DATA.length} รายการ</div>
-        <div style="height:7px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-top:9px">
-          <div id="homeSubmittedBar" style="height:100%;width:0%;background:#16a34a;border-radius:99px;transition:width .35s ease"></div>
-        </div>` : ''}`;
+      <div class="home-stat-num" style="color:${c.color}">${c.num}</div>
+      <div class="home-stat-label">${c.label}</div>`;
     grid.appendChild(div);
   });
   updateHomeSubmittedProgress();
