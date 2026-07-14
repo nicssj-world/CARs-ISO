@@ -2623,10 +2623,11 @@ function lockNCForm(submittedById, adminOnlyReopen = false) {
   if (btnDone) { btnDone.disabled = true; btnDone.style.opacity = '0.5'; }
   const btnReopen = document.getElementById('btn-reopen');
   if (btnReopen) {
-    // When locked because Admin marked it Submitted, only an Admin may reopen —
-    // the lab user who filled the form must not be able to edit anymore.
+    // Admin can always reopen, even a CAR that Admin already closed for
+    // editing — only the original lab submitter is blocked once Admin has
+    // locked/closed it.
     const canReopen = _currentRevisionView === 'current' && (
-      (isAdminUser() && !_adminClosed[currentNcId])
+      isAdminUser()
       || (!adminOnlyReopen && currentUser?.id === submittedById)
     );
     btnReopen.style.display = canReopen ? 'inline-flex' : 'none';
@@ -2671,6 +2672,10 @@ function unlockNCForm() {
 
 async function reopenNC() {
   if (!currentNcId) return;
+  if (_adminClosed[currentNcId] && !isAdminUser()) {
+    showToast('อนุญาตเฉพาะ Admin เท่านั้นในการเปิดรายการที่ปิดการแก้ไขแล้ว', '#e74c3c');
+    return;
+  }
   _liveStatus[currentNcId] = 'draft';
   _adminSubmitted[currentNcId] = false;
   _adminClosed[currentNcId] = false;
