@@ -94,6 +94,33 @@
     .home-stat-icon { font-size: 22px; margin-bottom: 10px; }
     .home-stat-num { font-size: 38px; font-weight: 800; line-height: 1; }
     .home-stat-label { font-size: 12px; color: #64748b; margin-top: 5px; font-weight: 500; }
+    .home-stat-card--featured {
+      grid-column: 1 / -1; order: -1;
+      display: flex; align-items: center; gap: 26px; flex-wrap: wrap;
+      padding: 28px 32px;
+      background: var(--featured-bg, linear-gradient(135deg,#f0fdf4,#dcfce7));
+      border: 2px solid var(--featured-accent, #16a34a);
+      box-shadow: 0 10px 30px var(--featured-shadow, rgba(22,163,74,.22));
+      position: relative;
+      animation: featuredGlow 2.6s ease-in-out infinite;
+    }
+    @keyframes featuredGlow {
+      0%, 100% { box-shadow: 0 10px 30px var(--featured-shadow, rgba(22,163,74,.22)); }
+      50% { box-shadow: 0 10px 34px var(--featured-shadow-strong, rgba(22,163,74,.4)); }
+    }
+    .home-stat-card--featured:hover { transform: none; }
+    .home-stat-card--featured .home-stat-icon-wrap {
+      width: 68px; height: 68px; border-radius: 18px; background:#16a34a; color:#fff;
+      display:flex; align-items:center; justify-content:center; font-size:30px; flex-shrink:0;
+      box-shadow: 0 6px 18px rgba(22,163,74,.4);
+    }
+    .home-stat-card--featured .home-stat-body { flex: 1; min-width: 220px; }
+    .home-stat-card--featured .home-stat-num { font-size: 56px; }
+    .home-stat-card--featured .home-stat-label { font-size: 14px; font-weight: 700; color: #166534; }
+    @media (max-width: 640px) {
+      .home-stat-card--featured { padding: 22px 20px; }
+      .home-stat-card--featured .home-stat-num { font-size: 44px; }
+    }
 
     /* ─── INSPECTOR DASHBOARD ─── */
     .inspector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 20px; }
@@ -346,6 +373,7 @@
       box-shadow: 0 0 0 2px var(--primary);
     }
     .timeline li.pending::before { background: #ccc; box-shadow: 0 0 0 2px #ccc; }
+    .timeline li.active-step { border-left-color: var(--primary); }
     .timeline-date { font-size: 11px; color: #999; }
     .timeline-text { font-size: 13px; color: #333; }
 
@@ -574,32 +602,37 @@
     <li id="li-nc" class="active">
       <a href="#" onclick="showPage('nc');return false"><i class="fa-solid fa-triangle-exclamation"></i> Nonconformity (NC)</a>
     </li>
+    <li id="li-settings" style="display:none">
+      <a href="#" onclick="showPage('settings');return false"><i class="fa-solid fa-gear"></i> การตั้งค่า</a>
+    </li>
   </ul>
 
   <!-- NC Status Timeline -->
   <div style="padding: 16px 14px; margin-top: 12px;">
     <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">สถานะ NC</div>
     <ul class="timeline" style="margin-left:0">
-      <li style="color:#fff">
+      <li id="timelineStep1" style="color:#fff">
         <div>
-          <div class="timeline-text" style="color:#e0e0e0">รับ NC จากผู้ตรวจ</div>
+          <div class="timeline-text" id="timelineReceivedText" style="color:#e0e0e0">รับ NC จากผู้ตรวจ</div>
           <div class="timeline-date">05/06/2026</div>
         </div>
       </li>
-      <li style="color:#fff">
+      <li id="timelineStep2" style="color:#fff">
         <div>
-          <div class="timeline-text" style="color:#e0e0e0">กำลังบันทึกการแก้ไข</div>
-          <div class="timeline-date">ปัจจุบัน</div>
+          <div class="timeline-text" id="timelineEditingText" style="color:#e0e0e0">กำลังบันทึกการแก้ไข</div>
+          <div class="timeline-date timeline-current-label" id="timelineCurrent2">ปัจจุบัน</div>
         </div>
       </li>
-      <li class="pending">
+      <li id="timelineStep3" class="pending">
         <div>
-          <div class="timeline-text" style="color:#888">ส่งให้ผู้ตรวจพิจารณา</div>
+          <div class="timeline-text" id="timelineReviewText" style="color:#888">ส่งให้ผู้ตรวจพิจารณา</div>
+          <div class="timeline-date timeline-current-label" id="timelineCurrent3" style="display:none">ปัจจุบัน</div>
         </div>
       </li>
-      <li class="pending">
+      <li id="timelineStep4" class="pending">
         <div>
-          <div class="timeline-text" style="color:#888">ผู้ตรวจยืนยัน</div>
+          <div class="timeline-text" id="timelineAcceptedText" style="color:#888">ผู้ตรวจยืนยัน</div>
+          <div class="timeline-date timeline-current-label" id="timelineCurrent4" style="display:none">ปัจจุบัน</div>
         </div>
       </li>
     </ul>
@@ -707,6 +740,71 @@
 
 </div><!-- /page-home -->
 
+<!-- ─── PAGE: SETTINGS ─── -->
+<div id="page-settings" style="display:none">
+  <div class="breadcrumb-bar">
+    <a href="#" onclick="showPage('home');return false"><i class="fa-solid fa-house"></i> หน้าแรก</a>
+    <span><i class="fa-solid fa-chevron-right" style="font-size:10px"></i></span>
+    <span>การตั้งค่า</span>
+  </div>
+
+  <div class="card" style="max-width:860px">
+    <div class="card-header-custom">
+      <div class="icon-box"><i class="fa-solid fa-gear"></i></div>
+      <h5>การตั้งค่าระบบ</h5>
+      <span style="margin-left:auto;font-size:12px;color:#888">เฉพาะ Admin</span>
+    </div>
+    <div class="card-body-custom">
+      <div class="section-title">
+        <i class="fa-solid fa-calendar-check"></i> เป้าหมายการส่ง CAR
+      </div>
+      <div class="row g-3" style="margin-bottom:18px">
+        <div class="col-md-5">
+          <label class="form-label">วันที่เป้าหมาย</label>
+          <input type="date" class="form-control" id="settingsTargetDate" style="font-size:13px">
+        </div>
+        <div class="col-md-7">
+          <label class="form-label">ข้อความที่แสดง</label>
+          <input type="text" class="form-control" id="settingsCountdownTitle" style="font-size:13px"
+            placeholder="ส่งการแก้ไข CAR (Corrective Action Request) ISO 15189 / 15190">
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:8px">
+        <i class="fa-solid fa-list-check"></i> ข้อความสถานะในเมนู
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="form-label">สถานะปัจจุบัน</label>
+        <input type="hidden" id="settingsTimelineStep" value="2">
+        <div id="settingsTimelineStepButtons" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"></div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">สถานะที่ 2</label>
+          <input type="text" class="form-control" id="settingsTimelineEditing" style="font-size:13px" oninput="renderSettingsTimelineStepButtons(document.getElementById('settingsTimelineStep').value)">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">สถานะที่ 3</label>
+          <input type="text" class="form-control" id="settingsTimelineReview" style="font-size:13px" oninput="renderSettingsTimelineStepButtons(document.getElementById('settingsTimelineStep').value)">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">สถานะที่ 4</label>
+          <input type="text" class="form-control" id="settingsTimelineAccepted" style="font-size:13px" oninput="renderSettingsTimelineStepButtons(document.getElementById('settingsTimelineStep').value)">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap">
+        <button type="button" class="btn-secondary-custom" onclick="resetSettingsForm()">
+          <i class="fa-solid fa-rotate-left"></i> คืนค่าเดิม
+        </button>
+        <button type="button" class="btn-primary-custom" onclick="saveAppSettings()">
+          <i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า
+        </button>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-settings -->
+
 <!-- ─── PAGE: NC ─── -->
 <div id="page-nc" style="display:none">
 
@@ -724,7 +822,7 @@
         <i class="fa-solid fa-filter"></i> กรองรายการ NC
       </div>
       <div class="row g-3 align-items-end">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label" style="font-size:12px">ประเภท NC</label>
           <div style="display:flex;gap:6px">
             <button type="button" id="flt_all"   onclick="setTypeFilter('all')"  style="flex:1;padding:5px 0;border-radius:6px;border:1px solid #d8dde3;background:#1a6faf;color:#fff;font-size:12.5px;font-weight:600;cursor:pointer">ทั้งหมด</button>
@@ -732,7 +830,7 @@
             <button type="button" id="flt_O"     onclick="setTypeFilter('O')"    style="flex:1;padding:5px 0;border-radius:6px;border:1px solid #d8dde3;background:#fff;color:#555;font-size:12.5px;font-weight:600;cursor:pointer">O</button>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label" style="font-size:12px">ประเภทข้อกำหนด</label>
           <select class="form-select" id="flt_std" onchange="applyFilters()" style="font-size:13px">
             <option value="">— ทั้งหมด —</option>
@@ -740,7 +838,18 @@
             <option value="15190">ISO 15190</option>
           </select>
         </div>
-        <div class="col-md-5">
+        <div class="col-md-3">
+          <label class="form-label" style="font-size:12px">สถานะ</label>
+          <select class="form-select" id="flt_status" onchange="applyFilters()" style="font-size:13px">
+            <option value="">— ทั้งหมด —</option>
+            <option value="pending_save">รอบันทึกการแก้ไข</option>
+            <option value="draft">กำลังดำเนินการ</option>
+            <option value="submitted">ส่งเสร็จแล้ว</option>
+            <option value="rejected">ส่งกลับแก้ไข</option>
+            <option value="closed">ปิดการแก้ไข</option>
+          </select>
+        </div>
+        <div class="col-md-4">
           <label class="form-label" style="font-size:12px">ปัญหาที่พบ</label>
           <input type="text" class="form-control" id="flt_clause"
             placeholder="พิมพ์เพื่อกรอง เช่น IQC หรือ calibration"
@@ -806,6 +915,7 @@
         <i class="fa-solid fa-user-pen"></i> บันทึกโดย: <strong id="savedByName"></strong>
       </span>
       <span id="currentStatusBadge" class="badge" style="background:#f39c12;font-size:12px;">กำลังดำเนินการ</span>
+      <span id="adminSubmittedBadge" class="badge" style="display:none;background:#16a34a;font-size:12px;">Submitted</span>
     </span>
   </div>
 
@@ -848,6 +958,7 @@
         <div class="icon-box" style="background:var(--success)"><i class="fa-solid fa-screwdriver-wrench"></i></div>
         <h5>ข้อมูลการแก้ไข</h5>
         <div style="margin-left:auto">
+          <div id="revisionRoundBadge" class="badge" style="display:none;background:#e0f2fe;color:#075985;font-size:11.5px;margin-right:8px">ต้นฉบับ</div>
           <div class="date-display"><i class="fa-regular fa-calendar me-1"></i>วันที่: <span id="submittedDateDisplay">—</span></div>
         </div>
       </div>
@@ -1027,6 +1138,37 @@
           </a>
         </div>
 
+        <div id="revisionViewFilter" class="mb-3" style="display:none;border-top:1px solid #e5e7eb;padding-top:12px">
+          <label class="form-label">เลือกดูข้อมูลการแก้ไข:</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" id="btnViewCurrentRevision" onclick="setRevisionView('current')"
+              style="border:1px solid #1a6faf;background:#1a6faf;color:#fff;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+              แก้ไขล่าสุด
+            </button>
+            <button type="button" id="btnViewOriginalRevision" onclick="setRevisionView('original')"
+              style="border:1px solid #d8dde3;background:#fff;color:#475569;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">
+              ต้นฉบับ
+            </button>
+          </div>
+        </div>
+
+        <div id="inspectorFeedbackSection" class="mb-3" style="display:none;border-top:1px solid #e5e7eb;padding-top:12px">
+          <label class="form-label">บันทึกข้อเสนอแนะของผู้ตรวจ</label>
+          <textarea class="form-control" rows="4" id="inspectorFeedbackNote"
+            placeholder="ระบุหลักฐานหรือข้อมูลเพิ่มเติมที่ผู้ตรวจต้องการ..." style="font-size:13px"></textarea>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button type="button" id="btn-save-inspector-feedback" class="btn-primary-custom" onclick="saveInspectorFeedback()"
+              style="padding:7px 14px;font-size:12.5px">
+              <i class="fa-solid fa-floppy-disk"></i> บันทึก
+            </button>
+            <button type="button" id="btn-edit-inspector-feedback" onclick="editInspectorFeedback()"
+              style="display:none;background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;gap:7px">
+              <i class="fa-solid fa-pen-to-square"></i> แก้ไขบันทึก
+            </button>
+            <span style="font-size:11.5px;color:#64748b">เมื่อบันทึก ระบบจะเก็บต้นฉบับและเปิดรอบแก้ไขครั้งที่ 1</span>
+          </div>
+        </div>
+
       </div>
     </div><!-- /card Correction data -->
 
@@ -1044,6 +1186,9 @@
         </button>
         <button type="button" id="btn-reopen" onclick="reopenNC()" style="display:none;background:#f59e0b;color:#fff;border:none;padding:9px 20px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;align-items:center;gap:7px">
           <i class="fa-solid fa-pen-to-square"></i> แก้ไขเพิ่มเติม
+        </button>
+        <button type="button" id="btn-admin-close-editing" onclick="closeEditingByAdmin()" style="display:none;background:#334155;color:#fff;border:none;padding:9px 20px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;align-items:center;gap:7px">
+          <i class="fa-solid fa-lock"></i> ปิดการแก้ไข
         </button>
       </div>
     </div>
@@ -1163,11 +1308,214 @@ const R2_WORKER_URL     = 'https://cars-r2-upload.nics-siriwatj.workers.dev';
 //   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS saved_by TEXT;
 //   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS submitted_by TEXT;
 //   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS submitted_by_id UUID;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_submitted BOOLEAN NOT NULL DEFAULT FALSE;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_submitted_at TIMESTAMPTZ;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_submitted_by TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_submitted_by_id UUID;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_closed BOOLEAN NOT NULL DEFAULT FALSE;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_closed_at TIMESTAMPTZ;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_closed_by TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS admin_closed_by_id UUID;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS revision_round INTEGER NOT NULL DEFAULT 0;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS revision_total INTEGER NOT NULL DEFAULT 1;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS revision_requested BOOLEAN NOT NULL DEFAULT FALSE;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS revision_requested_at TIMESTAMPTZ;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS revision_requested_by TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS revision_requested_by_id UUID;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS inspector_feedback TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_extent TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_root_cause TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_correction TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_preventive TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_impact TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_file_url TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_file_name TEXT;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_submitted_at TIMESTAMPTZ;
+//   ALTER TABLE cars_corrections ADD COLUMN IF NOT EXISTS original_submitted_by TEXT;
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null; // { id, name, email, role }
 let _appStarted = false;
 let _ncDataLoaded = false;
 let pendingPage = null; // page to navigate to after login
+const SETTINGS_ROW_KEY = 'ui_settings';
+const SETTINGS_LOCAL_KEY = 'cars_iso_ui_settings';
+const DEFAULT_APP_SETTINGS = {
+  targetDate: '2026-07-15',
+  startDate: '2026-06-05',
+  countdownTitle: 'ส่งการแก้ไข CAR (Corrective Action Request) ISO 15189 / 15190',
+  timelineStep: 2,
+  timeline: {
+    editing: 'กำลังบันทึกการแก้ไข',
+    review: 'ส่งให้ผู้ตรวจพิจารณา',
+    accepted: 'ผู้ตรวจยืนยัน',
+  },
+};
+let appSettings = JSON.parse(JSON.stringify(DEFAULT_APP_SETTINGS));
+let countdownTimer = null;
+
+function isAdminUser() {
+  const role = (currentUser?.role || '').trim().toLowerCase();
+  const email = (currentUser?.email || '').trim().toLowerCase();
+  const name = (currentUser?.name || '').trim().toLowerCase();
+  const employeeId = (currentUser?.employeeId || '').trim();
+  const adminRoles = ['admin', 'administrator', 'super_admin', 'super admin', 'owner', 'ผู้ดูแล', 'ผู้ดูแลระบบ'];
+  const adminEmails = ['nics.siriwatj@gmail.com', '9495@cbh.go.th'];
+  const adminEmployeeIds = ['9495'];
+  const adminNameParts = ['ศิริวัฒน์'];
+  return adminRoles.includes(role)
+    || role.includes('admin')
+    || adminEmails.includes(email)
+    || adminEmployeeIds.includes(employeeId)
+    || adminNameParts.some(part => name.includes(part));
+}
+
+function normalizeAppSettings(raw = {}) {
+  const rawStep = Number(raw.timelineStep ?? DEFAULT_APP_SETTINGS.timelineStep);
+  const timelineStep = Math.min(4, Math.max(1, Number.isFinite(rawStep) ? rawStep : DEFAULT_APP_SETTINGS.timelineStep));
+  return {
+    ...DEFAULT_APP_SETTINGS,
+    ...raw,
+    timelineStep,
+    timeline: {
+      ...DEFAULT_APP_SETTINGS.timeline,
+      ...(raw.timeline || {}),
+    },
+  };
+}
+
+function applyAppSettings(settings) {
+  appSettings = normalizeAppSettings(settings);
+  const titleEl = document.querySelector('.countdown-main-title');
+  if (titleEl) titleEl.textContent = appSettings.countdownTitle;
+  const editingEl = document.getElementById('timelineEditingText');
+  const reviewEl = document.getElementById('timelineReviewText');
+  const acceptedEl = document.getElementById('timelineAcceptedText');
+  if (editingEl) editingEl.textContent = appSettings.timeline.editing;
+  if (reviewEl) reviewEl.textContent = appSettings.timeline.review;
+  if (acceptedEl) acceptedEl.textContent = appSettings.timeline.accepted;
+  applyTimelineStep(appSettings.timelineStep);
+  fillSettingsForm();
+  restartCountdown();
+}
+
+function applyTimelineStep(step) {
+  const activeStep = Math.min(4, Math.max(1, Number(step) || DEFAULT_APP_SETTINGS.timelineStep));
+  const textIds = ['timelineReceivedText', 'timelineEditingText', 'timelineReviewText', 'timelineAcceptedText'];
+  for (let i = 1; i <= 4; i++) {
+    const li = document.getElementById(`timelineStep${i}`);
+    if (!li) continue;
+    const active = i <= activeStep;
+    li.classList.toggle('pending', !active);
+    li.classList.toggle('active-step', active);
+    const text = document.getElementById(textIds[i - 1]);
+    if (text) text.style.color = active ? '#e0e0e0' : '#888';
+  }
+  document.querySelectorAll('.timeline-current-label').forEach(el => { el.style.display = 'none'; });
+  const current = document.getElementById(`timelineCurrent${activeStep}`);
+  if (current) current.style.display = '';
+}
+
+function fillSettingsForm() {
+  const target = document.getElementById('settingsTargetDate');
+  if (!target) return;
+  target.value = appSettings.targetDate;
+  document.getElementById('settingsCountdownTitle').value = appSettings.countdownTitle;
+  document.getElementById('settingsTimelineEditing').value = appSettings.timeline.editing;
+  document.getElementById('settingsTimelineReview').value = appSettings.timeline.review;
+  document.getElementById('settingsTimelineAccepted').value = appSettings.timeline.accepted;
+  document.getElementById('settingsTimelineStep').value = appSettings.timelineStep;
+  renderSettingsTimelineStepButtons(appSettings.timelineStep);
+}
+
+function renderSettingsTimelineStepButtons(activeStep) {
+  const wrap = document.getElementById('settingsTimelineStepButtons');
+  if (!wrap) return;
+  const labels = [
+    'รับ NC จากผู้ตรวจ',
+    document.getElementById('settingsTimelineEditing')?.value || appSettings.timeline.editing,
+    document.getElementById('settingsTimelineReview')?.value || appSettings.timeline.review,
+    document.getElementById('settingsTimelineAccepted')?.value || appSettings.timeline.accepted,
+  ];
+  wrap.innerHTML = labels.map((label, idx) => {
+    const step = idx + 1;
+    const active = step === Number(activeStep);
+    return `<button type="button" onclick="setSettingsTimelineStep(${step})"
+      style="border:1px solid ${active ? '#1a6faf' : '#d8dde3'};background:${active ? '#1a6faf' : '#fff'};color:${active ? '#fff' : '#475569'};border-radius:7px;padding:8px 10px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left">
+      <i class="fa-solid ${active ? 'fa-circle-check' : 'fa-circle'} me-1"></i>${step}. ${label}
+    </button>`;
+  }).join('');
+}
+
+function setSettingsTimelineStep(step) {
+  document.getElementById('settingsTimelineStep').value = step;
+  renderSettingsTimelineStepButtons(step);
+}
+
+function resetSettingsForm() {
+  if (!isAdminUser()) { showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c'); return; }
+  applyAppSettings(DEFAULT_APP_SETTINGS);
+}
+
+async function loadAppSettings() {
+  try {
+    const local = localStorage.getItem(SETTINGS_LOCAL_KEY);
+    if (local) applyAppSettings(JSON.parse(local));
+  } catch {}
+
+  try {
+    const { data, error } = await sbClient
+      .from('cars_app_settings')
+      .select('value')
+      .eq('key', SETTINGS_ROW_KEY)
+      .maybeSingle();
+    if (error) throw error;
+    if (data?.value) {
+      localStorage.setItem(SETTINGS_LOCAL_KEY, JSON.stringify(data.value));
+      applyAppSettings(data.value);
+    }
+  } catch (err) {
+    applyAppSettings(appSettings);
+  }
+}
+
+async function saveAppSettings() {
+  if (!isAdminUser()) { showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c'); return; }
+  const targetDate = document.getElementById('settingsTargetDate').value || DEFAULT_APP_SETTINGS.targetDate;
+  const value = normalizeAppSettings({
+    targetDate,
+    countdownTitle: document.getElementById('settingsCountdownTitle').value.trim() || DEFAULT_APP_SETTINGS.countdownTitle,
+    timelineStep: Number(document.getElementById('settingsTimelineStep').value || DEFAULT_APP_SETTINGS.timelineStep),
+    timeline: {
+      editing: document.getElementById('settingsTimelineEditing').value.trim() || DEFAULT_APP_SETTINGS.timeline.editing,
+      review: document.getElementById('settingsTimelineReview').value.trim() || DEFAULT_APP_SETTINGS.timeline.review,
+      accepted: document.getElementById('settingsTimelineAccepted').value.trim() || DEFAULT_APP_SETTINGS.timeline.accepted,
+    },
+  });
+  localStorage.setItem(SETTINGS_LOCAL_KEY, JSON.stringify(value));
+  applyAppSettings(value);
+
+  try {
+    const { error } = await sbClient.from('cars_app_settings').upsert({
+      key: SETTINGS_ROW_KEY,
+      value,
+      updated_at: new Date().toISOString(),
+      updated_by: currentUser?.name || '',
+      updated_by_id: currentUser?.id || null,
+    }, { onConflict: 'key' });
+    if (error) throw error;
+    showToast('บันทึกการตั้งค่าสำเร็จ', '#16a34a');
+  } catch (err) {
+    const needsTable = /cars_app_settings|relation|schema cache|does not exist/i.test(err.message || '');
+    showToast(needsTable
+      ? 'ยังไม่ได้เพิ่มตาราง cars_app_settings ใน Supabase'
+      : 'บันทึกการตั้งค่าใน Supabase ไม่สำเร็จ: ' + err.message, '#e74c3c');
+  }
+}
+
+function updateAdminMenu() {
+  const item = document.getElementById('li-settings');
+  if (item) item.style.display = isAdminUser() ? '' : 'none';
+}
 
 async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
@@ -1192,6 +1540,7 @@ async function initAuth() {
     if (!session && _appStarted) {
       currentUser = null;
       document.getElementById('userBadge').style.display = 'none';
+      updateAdminMenu();
       // If on NC, redirect to home silently (no full-page overlay)
       if (location.hash === '#nc') showPage('home');
     }
@@ -1200,14 +1549,16 @@ async function initAuth() {
 
 async function onAuthSuccess(user) {
   let name = user.email;
+  const employeeId = sessionStorage.getItem('lastLoginEphis') || (user.email || '').split('@')[0] || '';
   try {
     const { data } = await sbClient.from('profiles').select('name, role').eq('id', user.id).single();
     if (data?.name) name = data.name;
-    currentUser = { id: user.id, email: user.email, name, role: data?.role || '' };
+    currentUser = { id: user.id, email: user.email, name, role: data?.role || '', employeeId };
   } catch {
-    currentUser = { id: user.id, email: user.email, name, role: '' };
+    currentUser = { id: user.id, email: user.email, name, role: '', employeeId };
   }
   updateUserBadge(currentUser);
+  updateAdminMenu();
   hideLoginScreen();
   if (!_ncDataLoaded) {
     _ncDataLoaded = true;
@@ -1215,7 +1566,7 @@ async function onAuthSuccess(user) {
     loadNC(1);
   }
   if (!_appStarted) { _appStarted = true; }
-  const target = pendingPage || (location.hash === '#nc' ? 'nc' : 'home');
+  const target = pendingPage || (location.hash === '#nc' ? 'nc' : location.hash === '#settings' ? 'settings' : 'home');
   pendingPage = null;
   showPage(target);
 }
@@ -1232,6 +1583,7 @@ async function doLogin() {
   }
   // แปลง E-Phis → email เหมือน lab-management-portal
   const email = raw.includes('@') ? raw : `${raw}@cbh.go.th`;
+  if (!raw.includes('@')) sessionStorage.setItem('lastLoginEphis', raw);
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังเข้าสู่ระบบ...';
   errEl.style.display = 'none';
@@ -1249,6 +1601,7 @@ async function doLogin() {
 async function doLogout() {
   await sbClient.auth.signOut();
   currentUser = null;
+  updateAdminMenu();
   showLoginScreen();
 }
 
@@ -1631,6 +1984,12 @@ document.querySelectorAll('input[name="ncType"]').forEach(r => {
 
 
 // ═══════ FILE UPLOAD + R2 ═══════
+// แนบชื่อไฟล์เดิมไปกับ URL ดาวน์โหลด เพื่อให้ไฟล์เก่า (ที่ไม่มี metadata) ได้ชื่อถูกต้อง
+function fileUrlWithName(url, name) {
+  if (!url || !name) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'name=' + encodeURIComponent(name);
+}
+
 async function handleFileSelect(input) {
   if (!input.files.length) return;
   const file = input.files[0];
@@ -1655,10 +2014,11 @@ async function handleFileSelect(input) {
     const res = await fetch(R2_WORKER_URL, { method: 'POST', body: form });
     if (!res.ok) throw new Error((await res.text()) || 'Upload failed');
     const { url } = await res.json();
+    const dlUrl = fileUrlWithName(url, file.name);
     document.getElementById('uploadedFileUrl').value = url;
     const lnk = document.getElementById('fileUrlLink');
-    lnk.href = url; lnk.style.display = 'inline';
-    document.getElementById('viewDocLink').href = url;
+    lnk.href = dlUrl; lnk.style.display = 'inline';
+    document.getElementById('viewDocLink').href = dlUrl;
     document.getElementById('viewDocSection').style.display = 'block';
     document.getElementById('fileNameDisplay').style.display = 'block';
     showToast('อัพโหลดไฟล์สำเร็จ');
@@ -1672,6 +2032,7 @@ async function handleFileSelect(input) {
 
 function clearFile() {
   document.getElementById('fileInput').value = '';
+  document.getElementById('fileNameText').textContent = '';
   document.getElementById('fileNameDisplay').style.display = 'none';
   document.getElementById('uploadProgress').style.display = 'none';
   document.getElementById('uploadedFileUrl').value = '';
@@ -1699,6 +2060,17 @@ function renderNCList(data) {
     const dbStatus = _liveStatus[nc.id];
     const status = dbStatus ? (STATUS_LABEL[dbStatus] || dbStatus) : 'รอการบันทึกแก้ไข';
     const { bg: stBg, clr: stClr } = STATUS_STYLE[dbStatus] || STATUS_STYLE.default;
+    const adminSubmitted = !!_adminSubmitted[nc.id];
+    const adminSubmittedBadge = getAdminWorkflowBadge(nc.id, true);
+    const adminSubmittedToggle = isAdminUser() && !_adminClosed[nc.id] ? `
+        <label style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:10.5px;color:#475569;cursor:pointer">
+          <input type="checkbox"
+            ${adminSubmitted ? 'checked' : ''}
+            onclick="event.stopPropagation()"
+            onchange="toggleAdminSubmitted(${nc.id}, this.checked, this)"
+            style="width:13px;height:13px;margin:0">
+          <span>Admin submit</span>
+        </label>` : '';
     return `<tr id="ncRow_${nc.id}"${act}>
       <td style="font-weight:700;color:#777;white-space:nowrap">${nc.id}</td>
       <td style="font-size:12px">${nc.inspector}</td>
@@ -1710,6 +2082,8 @@ function renderNCList(data) {
       <td style="font-size:11.5px;color:#444;line-height:1.55;min-width:280px">${probShort}</td>
       <td style="white-space:nowrap">
         <span style="background:${stBg};color:${stClr};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600">${status}</span>
+        ${adminSubmittedBadge}
+        ${adminSubmittedToggle}
       </td>
       <td style="white-space:nowrap;display:flex;gap:5px">
         <button type="button" onclick="showNCDetail(${nc.id})"
@@ -1727,6 +2101,11 @@ function renderNCList(data) {
 
 let _activeTypeFilter = 'all';
 let _liveStatus = {}; // { nc_id: 'draft'|'submitted'|'accepted'|'rejected' }
+let _adminSubmitted = {}; // { nc_id: true|false }
+let _adminClosed = {}; // { nc_id: true|false }
+let _currentCorrectionRecord = null;
+let _currentRevisionView = 'current';
+let _currentRevisionDraftCache = null;
 
 const STATUS_LABEL = { draft:'กำลังดำเนินการ', submitted:'ส่งเสร็จแล้ว', accepted:'ยอมรับแล้ว', rejected:'ส่งกลับแก้ไข' };
 const STATUS_STYLE = {
@@ -1737,17 +2116,113 @@ const STATUS_STYLE = {
   default:   { bg:'#e2e8f0', clr:'#475569' },
 };
 
+function getAdminWorkflowBadge(ncId, inline = false) {
+  if (_adminClosed[ncId]) {
+    return `<span style="${inline ? 'display:inline-block;' : ''}background:#334155;color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;margin-top:5px">ปิดการแก้ไข</span>`;
+  }
+  if (_adminSubmitted[ncId]) {
+    return `<span style="${inline ? 'display:inline-block;' : ''}background:#dcfce7;color:#166534;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;margin-top:5px">Submitted</span>`;
+  }
+  return '';
+}
+
+function updateAdminSubmittedBadge(isSubmitted, isClosed = false) {
+  const badge = document.getElementById('adminSubmittedBadge');
+  if (!badge) return;
+  badge.style.display = (isSubmitted || isClosed) ? '' : 'none';
+  badge.textContent = isClosed ? 'ปิดการแก้ไข' : 'Submitted';
+  badge.style.background = isClosed ? '#334155' : '#16a34a';
+}
+
+function updateAdminActionButtons() {
+  const btnClose = document.getElementById('btn-admin-close-editing');
+  if (!btnClose) return;
+  const canClose = isAdminUser()
+    && currentNcId
+    && !!_adminSubmitted[currentNcId]
+    && !_adminClosed[currentNcId]
+    && _currentRevisionView === 'current';
+  btnClose.style.display = canClose ? 'inline-flex' : 'none';
+}
+
 async function fetchLiveStatuses() {
   try {
     const { data: rows, error } = await sbClient
       .from('cars_corrections')
-      .select('nc_id, status')
+      .select('*')
       .order('updated_at', { ascending: false })
       .limit(500);
     if (error) throw error;
-    rows.forEach(row => { if (!_liveStatus[row.nc_id]) _liveStatus[row.nc_id] = row.status; });
+    const seen = new Set();
+    rows.forEach(row => {
+      if (seen.has(row.nc_id)) return;
+      _liveStatus[row.nc_id] = row.status;
+      _adminSubmitted[row.nc_id] = !!row.admin_submitted;
+      _adminClosed[row.nc_id] = !!row.admin_closed;
+      seen.add(row.nc_id);
+    });
     applyFilters();
+    updateHomeSubmittedProgress();
   } catch(e) {}
+}
+
+async function toggleAdminSubmitted(ncId, checked, checkboxEl) {
+  if (!isAdminUser()) {
+    if (checkboxEl) checkboxEl.checked = !checked;
+    showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c');
+    return;
+  }
+
+  const previousValue = !!_adminSubmitted[ncId];
+  if (checkboxEl) checkboxEl.disabled = true;
+  const now = new Date().toISOString();
+  const payload = {
+    ...collectNCBaseData(ncId),
+    status: _liveStatus[ncId] || 'draft',
+    updated_at: now,
+    admin_submitted: checked,
+    admin_submitted_at: checked ? now : null,
+    admin_submitted_by: checked ? (currentUser?.name || '') : '',
+    admin_submitted_by_id: checked ? (currentUser?.id || null) : null,
+    admin_closed: false,
+    admin_closed_at: null,
+    admin_closed_by: '',
+    admin_closed_by_id: null,
+  };
+
+  try {
+    const { error } = await sbClient.from('cars_corrections').upsert(payload, { onConflict: 'nc_id' });
+    if (error) throw error;
+
+    _adminSubmitted[ncId] = checked;
+    _adminClosed[ncId] = false;
+    applyFilters();
+    updateHomeSubmittedProgress();
+
+    if (currentNcId === ncId) {
+      updateAdminSubmittedBadge(checked, false);
+      // Lock/unlock the open form to match the Submitted state so the user
+      // can't edit once Admin has submitted it.
+      if (checked) {
+        lockNCForm(null, true);
+      } else if (!['submitted','accepted'].includes(_liveStatus[ncId])) {
+        unlockNCForm();
+      }
+      updateAdminActionButtons();
+    }
+
+    showToast(checked ? 'Marked Submitted' : 'Unchecked Submitted', checked ? '#16a34a' : '#f59e0b');
+  } catch (err) {
+    if (checkboxEl) {
+      checkboxEl.disabled = false;
+      checkboxEl.checked = !checked;
+    }
+    _adminSubmitted[ncId] = previousValue;
+    const needsColumn = /admin_submitted|admin_closed/i.test(err.message || '');
+    showToast(needsColumn
+      ? 'ยังไม่ได้เพิ่ม column admin_submitted/admin_closed ใน Supabase'
+      : 'บันทึก Submitted ไม่สำเร็จ: ' + err.message, '#e74c3c');
+  }
 }
 
 function setTypeFilter(val) {
@@ -1762,13 +2237,20 @@ function setTypeFilter(val) {
   applyFilters();
 }
 
+function getNCFilterStatus(ncId) {
+  if (_adminClosed[ncId]) return 'closed';
+  return _liveStatus[ncId] || 'pending_save';
+}
+
 function applyFilters() {
   const q      = (document.getElementById('ncSearchInput')?.value || '').toLowerCase().trim();
   const std    = document.getElementById('flt_std')?.value    || '';
+  const status = document.getElementById('flt_status')?.value || '';
   const clause = (document.getElementById('flt_clause')?.value || '').toLowerCase().trim();
   let data = NC_DATA.filter(nc => {
     if (_activeTypeFilter !== 'all' && nc.ncType !== _activeTypeFilter) return false;
     if (std    && nc.stdType !== std)                                    return false;
+    if (status && getNCFilterStatus(nc.id) !== status)                    return false;
     if (clause && !nc.problem.replace(/<[^>]+>/g,'').toLowerCase().includes(clause)) return false;
     if (q      && !nc.inspector.toLowerCase().includes(q) &&
                   !nc.clause.toLowerCase().includes(q) &&
@@ -1788,6 +2270,7 @@ function clearFilters() {
   _activeTypeFilter = 'all';
   setTypeFilter('all');
   document.getElementById('flt_std').value    = '';
+  document.getElementById('flt_status').value = '';
   document.getElementById('flt_clause').value = '';
   document.getElementById('ncSearchInput').value = '';
   applyFilters();
@@ -1798,16 +2281,168 @@ function sortNC(key) {
   applyFilters();
 }
 
+function getCurrentFormSnapshot() {
+  return {
+    extent:     document.getElementById('rte_extent').innerHTML,
+    root_cause: document.getElementById('rte_rootcause').innerHTML,
+    correction: document.getElementById('rte_correction').innerHTML,
+    preventive: document.getElementById('rte_preventive').innerHTML,
+    impact:     document.getElementById('rte_impact').innerHTML,
+    file_url:   document.getElementById('uploadedFileUrl').value,
+    file_name:  document.getElementById('fileNameText')?.textContent || '',
+  };
+}
+
+function applyFormSnapshot(snapshot = {}) {
+  document.getElementById('rte_extent').innerHTML = snapshot.extent || '';
+  document.getElementById('rte_rootcause').innerHTML = snapshot.root_cause || '';
+  document.getElementById('rte_correction').innerHTML = snapshot.correction || '';
+  document.getElementById('rte_preventive').innerHTML = snapshot.preventive || '';
+  document.getElementById('rte_impact').innerHTML = snapshot.impact || '';
+  clearFile();
+  if (snapshot.file_url) {
+    const dlUrl = fileUrlWithName(snapshot.file_url, snapshot.file_name);
+    document.getElementById('uploadedFileUrl').value = snapshot.file_url;
+    document.getElementById('fileNameText').textContent = snapshot.file_name || 'ไฟล์แนบ';
+    document.getElementById('fileNameDisplay').style.display = 'block';
+    const lnk = document.getElementById('fileUrlLink');
+    lnk.href = dlUrl; lnk.style.display = 'inline';
+    document.getElementById('viewDocLink').href = dlUrl;
+    document.getElementById('viewDocSection').style.display = 'block';
+  }
+}
+
+function clearCorrectionInputs() {
+  applyFormSnapshot({});
+}
+
+function hasOriginalSnapshot(record = _currentCorrectionRecord) {
+  return !!(record && (
+    record.original_extent ||
+    record.original_root_cause ||
+    record.original_correction ||
+    record.original_preventive ||
+    record.original_impact ||
+    record.original_file_url
+  ));
+}
+
+function snapshotFromRecord(record = {}, original = false) {
+  const p = original ? 'original_' : '';
+  return {
+    extent:     record[p + 'extent'] || '',
+    root_cause: record[p + 'root_cause'] || '',
+    correction: record[p + 'correction'] || '',
+    preventive: record[p + 'preventive'] || '',
+    impact:     record[p + 'impact'] || '',
+    file_url:   record[p + 'file_url'] || '',
+    file_name:  record[p + 'file_name'] || '',
+  };
+}
+
+function setRevisionBadge(record = _currentCorrectionRecord) {
+  const badge = document.getElementById('revisionRoundBadge');
+  if (!badge) return;
+  const round = Number(record?.revision_round || 0);
+  const total = Number(record?.revision_total || 1);
+  if (round > 0) {
+    badge.textContent = `แก้ไขครั้งที่ ${round} (ทั้งหมด ${total} ครั้ง)`;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.textContent = 'ต้นฉบับ';
+    badge.style.display = hasOriginalSnapshot(record) ? 'inline-block' : 'none';
+  }
+}
+
+function updateRevisionViewButtons() {
+  const hasOriginal = hasOriginalSnapshot();
+  const wrap = document.getElementById('revisionViewFilter');
+  if (wrap) wrap.style.display = hasOriginal ? '' : 'none';
+  const cur = document.getElementById('btnViewCurrentRevision');
+  const org = document.getElementById('btnViewOriginalRevision');
+  if (!cur || !org) return;
+  const activeCur = _currentRevisionView === 'current';
+  cur.style.background = activeCur ? '#1a6faf' : '#fff';
+  cur.style.color = activeCur ? '#fff' : '#475569';
+  cur.style.borderColor = activeCur ? '#1a6faf' : '#d8dde3';
+  org.style.background = activeCur ? '#fff' : '#1a6faf';
+  org.style.color = activeCur ? '#475569' : '#fff';
+  org.style.borderColor = activeCur ? '#d8dde3' : '#1a6faf';
+}
+
+function updateInspectorFeedbackSection(record = _currentCorrectionRecord) {
+  const section = document.getElementById('inspectorFeedbackSection');
+  const note = document.getElementById('inspectorFeedbackNote');
+  const saveBtn = document.getElementById('btn-save-inspector-feedback');
+  const editBtn = document.getElementById('btn-edit-inspector-feedback');
+  if (!section || !note || !saveBtn || !editBtn) return;
+  const admin = isAdminUser();
+  section.style.display = '';
+  note.value = record?.inspector_feedback || '';
+  const editable = admin && _currentRevisionView === 'current' && !_adminClosed[currentNcId];
+  const hasFeedback = !!String(record?.inspector_feedback || '').trim();
+  note.disabled = !editable;
+  saveBtn.style.display = editable && !hasFeedback ? 'inline-flex' : 'none';
+  editBtn.style.display = editable && hasFeedback ? 'inline-flex' : 'none';
+}
+
+function updateRevisionUI(record = _currentCorrectionRecord) {
+  setRevisionBadge(record);
+  const btnDone = document.getElementById('btn-submit-done');
+  if (btnDone) {
+    const isRevision = Number(record?.revision_round || 0) > 0;
+    btnDone.innerHTML = isRevision
+      ? '<i class="fa-solid fa-paper-plane"></i> ส่งการแก้ไขให้ผู้ตรวจ'
+      : '<i class="fa-solid fa-circle-check"></i> ส่งเสร็จแล้ว';
+  }
+  updateRevisionViewButtons();
+  updateInspectorFeedbackSection(record);
+  updateAdminActionButtons();
+}
+
+function setRevisionView(mode) {
+  if (!hasOriginalSnapshot() && mode === 'original') return;
+  if (_currentRevisionView === 'current' && mode === 'original') {
+    _currentRevisionDraftCache = getCurrentFormSnapshot();
+  }
+  _currentRevisionView = mode;
+  if (mode === 'original') {
+    applyFormSnapshot(snapshotFromRecord(_currentCorrectionRecord, true));
+    lockNCForm(null, true);
+    const badge = document.getElementById('revisionRoundBadge');
+    if (badge) {
+      badge.textContent = 'ต้นฉบับ';
+      badge.style.display = 'inline-block';
+    }
+  } else {
+    applyFormSnapshot(_currentRevisionDraftCache || snapshotFromRecord(_currentCorrectionRecord, false));
+    _currentRevisionDraftCache = null;
+    const locked = !!_adminClosed[currentNcId]
+      || !!_adminSubmitted[currentNcId]
+      || ['submitted','accepted'].includes(_liveStatus[currentNcId]);
+    if (locked) lockNCForm(_currentCorrectionRecord?.submitted_by_id, !!_adminSubmitted[currentNcId] || !!_adminClosed[currentNcId]);
+    else unlockNCForm();
+    setRevisionBadge(_currentCorrectionRecord);
+  }
+  updateRevisionUI();
+}
+
 function showNCDetail(id) {
   const nc = NC_DATA.find(n => n.id === id);
   if (!nc) return;
   const stdLbl = nc.stdType === '15190' ? 'ISO 15190' : 'ISO 15189';
+  const dbStatus = _liveStatus[id];
+  const status = dbStatus ? (STATUS_LABEL[dbStatus] || dbStatus) : 'รอการบันทึกแก้ไข';
+  const { bg: stBg, clr: stClr } = STATUS_STYLE[dbStatus] || STATUS_STYLE.default;
+  const adminSubmittedBadge = getAdminWorkflowBadge(id);
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:12px;width:100%;max-width:680px;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)">
       <div style="padding:16px 20px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:10px">
         <strong style="font-size:15px">NC #${nc.id} — รายละเอียดปัญหาที่พบ</strong>
+        <span style="background:${stBg};color:${stClr};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700">${status}</span>
+        ${adminSubmittedBadge}
         <span style="margin-left:auto;background:#eee;padding:2px 9px;border-radius:8px;font-size:12px">${stdLbl} · ${nc.ncType}</span>
         <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#888;line-height:1">&times;</button>
       </div>
@@ -1826,6 +2461,9 @@ async function loadNC(id) {
   const nc = NC_DATA.find(n => n.id === id);
   if (!nc) return;
   currentNcId = id;
+  _currentCorrectionRecord = null;
+  _currentRevisionView = 'current';
+  _currentRevisionDraftCache = null;
 
   document.getElementById('rte_problem').innerHTML = formatProblem(nc.problem);
 
@@ -1833,6 +2471,10 @@ async function loadNC(id) {
     .forEach(rid => { const el = document.getElementById(rid); if (el) el.innerHTML = ''; });
 
   clearFile();
+  // Reset to the unlocked/editable state: clears any locked file view left
+  // over from a previously opened (submitted/accepted) NC and restores the
+  // upload zone. Without this, a prior item's attachment stays on screen.
+  unlockNCForm();
 
   document.getElementById('savedByTag').style.display = 'none';
   document.getElementById('ncIdDisplay').textContent = id;
@@ -1840,10 +2482,12 @@ async function loadNC(id) {
   document.getElementById('ncInfoBar').style.display = 'flex';
   document.getElementById('currentStatusBadge').textContent = 'กำลังดำเนินการ';
   document.getElementById('currentStatusBadge').style.background = '#f39c12';
+  updateAdminSubmittedBadge(false, false);
   document.getElementById('submittedDateDisplay').textContent = '—';
+  updateRevisionUI(null);
 
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable', 'true'));
-  document.querySelectorAll('.form-control:not(#ncSearchInput), .form-select').forEach(el => el.disabled = false);
+  document.querySelectorAll('#carsForm .form-control:not(#inspectorFeedbackNote), #carsForm .form-select').forEach(el => el.disabled = false);
 
   document.querySelectorAll('#ncTableBody tr').forEach(tr => tr.removeAttribute('style'));
   const row = document.getElementById('ncRow_' + id);
@@ -1859,35 +2503,34 @@ async function loadNC(id) {
       .order('updated_at', { ascending: false })
       .limit(1);
     if (error) throw error;
+    // Guard against stale responses: if the user has switched to another NC
+    // while this fetch was in flight, discard it so it can't overwrite the
+    // current item's form (e.g. leaving a previous item's attachment showing).
+    if (id !== currentNcId) return;
     if (rows && rows.length) {
         const d = rows[0];
-        if (d.extent)     document.getElementById('rte_extent').innerHTML     = d.extent;
-        if (d.root_cause) document.getElementById('rte_rootcause').innerHTML  = d.root_cause;
-        if (d.correction) document.getElementById('rte_correction').innerHTML = d.correction;
-        if (d.preventive) document.getElementById('rte_preventive').innerHTML = d.preventive;
-        if (d.impact)     document.getElementById('rte_impact').innerHTML     = d.impact;
-        if (d.file_url) {
-          document.getElementById('uploadedFileUrl').value = d.file_url;
-          document.getElementById('fileNameText').textContent = d.file_name || 'ไฟล์แนบ';
-          document.getElementById('fileNameDisplay').style.display = 'block';
-          const lnk = document.getElementById('fileUrlLink');
-          lnk.href = d.file_url; lnk.style.display = 'inline';
-          document.getElementById('viewDocLink').href = d.file_url;
-          document.getElementById('viewDocSection').style.display = 'block';
-        }
+        _currentCorrectionRecord = d;
+        _adminSubmitted[id] = !!d.admin_submitted;
+        _adminClosed[id] = !!d.admin_closed;
+        _liveStatus[id] = d.status;
+        updateAdminSubmittedBadge(!!d.admin_submitted, !!d.admin_closed);
+        applyFormSnapshot(snapshotFromRecord(d, false));
         const statusMap = { draft:'กำลังดำเนินการ', submitted:'ส่งเสร็จแล้ว', accepted:'ยอมรับแล้ว', rejected:'ส่งกลับแก้ไข' };
         const colorMap  = { draft:'#f39c12', submitted:'#16a34a', accepted:'#27ae60', rejected:'#e74c3c' };
         if (statusMap[d.status]) {
           document.getElementById('currentStatusBadge').textContent = statusMap[d.status];
           document.getElementById('currentStatusBadge').style.background = colorMap[d.status];
         }
-        // Lock form if already submitted or accepted
-        if (['submitted','accepted'].includes(d.status)) lockNCForm(d.submitted_by_id);
+        // Lock form if already submitted/accepted, or once Admin marked it Submitted
+        const adminLocked = !!d.admin_submitted || !!d.admin_closed;
+        if (adminLocked || ['submitted','accepted'].includes(d.status))
+          lockNCForm(d.submitted_by_id, adminLocked);
         if (d.submitted_at)
           document.getElementById('submittedDateDisplay').textContent =
             new Date(d.submitted_at).toLocaleDateString('th-TH');
         const byName = d.submitted_by || d.saved_by || '';
         if (byName) showSavedBy(byName);
+        updateRevisionUI(d);
         showToast('โหลดข้อมูลที่บันทึกไว้แล้ว', '#27ae60');
       }
   } catch (e) { /* network error */ }
@@ -1908,16 +2551,43 @@ function validateForm() {
 }
 
 // ═══════ COLLECT FORM DATA ═══════
-function collectFormData() {
-  const nc = NC_DATA.find(n => n.id === currentNcId) || {};
+function collectNCBaseData(ncId) {
+  const nc = NC_DATA.find(n => n.id === ncId) || {};
   return {
-    nc_id:      currentNcId,
-    round:      1,
+    nc_id:      ncId,
+    round:      Number(ncId === currentNcId ? (_currentCorrectionRecord?.revision_round || 0) : 0),
     inspector:  nc.inspector || '',
     nc_type:    nc.ncType || '',
     standard:   nc.stdType || '',
     clause:     nc.clause || '',
     problem:    nc.problem || '',
+  };
+}
+
+function collectWorkflowState() {
+  return {
+    admin_submitted: !!_adminSubmitted[currentNcId],
+    admin_closed: !!_adminClosed[currentNcId],
+    revision_round: Number(_currentCorrectionRecord?.revision_round || 0),
+    revision_total: Number(_currentCorrectionRecord?.revision_total || 1),
+    revision_requested: !!_currentCorrectionRecord?.revision_requested,
+    inspector_feedback: _currentCorrectionRecord?.inspector_feedback || '',
+    original_extent: _currentCorrectionRecord?.original_extent || null,
+    original_root_cause: _currentCorrectionRecord?.original_root_cause || null,
+    original_correction: _currentCorrectionRecord?.original_correction || null,
+    original_preventive: _currentCorrectionRecord?.original_preventive || null,
+    original_impact: _currentCorrectionRecord?.original_impact || null,
+    original_file_url: _currentCorrectionRecord?.original_file_url || null,
+    original_file_name: _currentCorrectionRecord?.original_file_name || null,
+    original_submitted_at: _currentCorrectionRecord?.original_submitted_at || null,
+    original_submitted_by: _currentCorrectionRecord?.original_submitted_by || null,
+  };
+}
+
+function collectFormData() {
+  return {
+    ...collectNCBaseData(currentNcId),
+    ...collectWorkflowState(),
     extent:     document.getElementById('rte_extent').innerHTML,
     root_cause: document.getElementById('rte_rootcause').innerHTML,
     correction: document.getElementById('rte_correction').innerHTML,
@@ -1939,7 +2609,9 @@ async function saveDraft() {
     const payload = { ...collectFormData(), status: 'draft', updated_at: new Date().toISOString() };
     const { error } = await sbClient.from('cars_corrections').upsert(payload, { onConflict: 'nc_id' });
     if (error) throw error;
+    _currentCorrectionRecord = { ...(_currentCorrectionRecord || {}), ...payload };
     _liveStatus[currentNcId] = 'draft';
+    updateRevisionUI(_currentCorrectionRecord);
     applyFilters();
     showSavedBy(currentUser?.name);
     showToast('บันทึกการแก้ไขสำเร็จ' + (currentUser?.name ? ` — โดย ${currentUser.name}` : ''), 'var(--primary)');
@@ -1949,27 +2621,36 @@ async function saveDraft() {
 }
 
 // ═══════ FORM LOCK / UNLOCK HELPERS ═══════
-function lockNCForm(submittedById) {
+function lockNCForm(submittedById, adminOnlyReopen = false) {
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable','false'));
-  document.querySelectorAll('.form-control:not(#ncSearchInput), .form-select').forEach(el => el.disabled = true);
+  document.querySelectorAll('#carsForm .form-control:not(#inspectorFeedbackNote), #carsForm .form-select').forEach(el => el.disabled = true);
   const btnSave = document.getElementById('btn-save-draft');
   if (btnSave) btnSave.style.display = 'none';
   const btnDone = document.getElementById('btn-submit-done');
   if (btnDone) { btnDone.disabled = true; btnDone.style.opacity = '0.5'; }
   const btnReopen = document.getElementById('btn-reopen');
   if (btnReopen) {
-    const canReopen = currentUser?.role === 'Admin' || currentUser?.id === submittedById;
+    // Admin can always reopen, even a CAR that Admin already closed for
+    // editing — only the original lab submitter is blocked once Admin has
+    // locked/closed it.
+    const canReopen = _currentRevisionView === 'current' && (
+      isAdminUser()
+      || (!adminOnlyReopen && currentUser?.id === submittedById)
+    );
     btnReopen.style.display = canReopen ? 'inline-flex' : 'none';
   }
+  updateAdminActionButtons();
+  updateInspectorFeedbackSection();
 
   // Switch to read-only file view
   const url  = document.getElementById('uploadedFileUrl').value;
   const name = document.getElementById('fileNameText').textContent || 'ไฟล์แนบ';
+  const dlUrl = fileUrlWithName(url, name);
   document.getElementById('uploadZoneWrapper').style.display = 'none';
   const view = document.getElementById('lockedFileView');
   view.style.display = '';
   view.innerHTML = url
-    ? `<a href="${url}" target="_blank" rel="noopener"
+    ? `<a href="${dlUrl}" target="_blank" rel="noopener"
          style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:8px;border:1.5px solid #d1d5db;background:#f9fafb;font-size:13px;color:var(--primary);text-decoration:none;transition:background .15s"
          onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f9fafb'">
          <i class="fa-solid fa-file-arrow-down" style="font-size:16px"></i>
@@ -1980,13 +2661,15 @@ function lockNCForm(submittedById) {
 
 function unlockNCForm() {
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable','true'));
-  document.querySelectorAll('.form-control, .form-select').forEach(el => el.disabled = false);
+  document.querySelectorAll('#carsForm .form-control:not(#inspectorFeedbackNote), #carsForm .form-select').forEach(el => el.disabled = false);
   const btnSave = document.getElementById('btn-save-draft');
   if (btnSave) btnSave.style.display = '';
   const btnDone = document.getElementById('btn-submit-done');
   if (btnDone) { btnDone.disabled = false; btnDone.style.opacity = '1'; }
   const btnReopen = document.getElementById('btn-reopen');
   if (btnReopen) btnReopen.style.display = 'none';
+  updateAdminActionButtons();
+  updateInspectorFeedbackSection();
 
   // Restore upload zone
   document.getElementById('uploadZoneWrapper').style.display = '';
@@ -1996,15 +2679,196 @@ function unlockNCForm() {
 
 async function reopenNC() {
   if (!currentNcId) return;
+  if (_adminClosed[currentNcId] && !isAdminUser()) {
+    showToast('อนุญาตเฉพาะ Admin เท่านั้นในการเปิดรายการที่ปิดการแก้ไขแล้ว', '#e74c3c');
+    return;
+  }
   _liveStatus[currentNcId] = 'draft';
+  _adminSubmitted[currentNcId] = false;
+  _adminClosed[currentNcId] = false;
   applyFilters();
   unlockNCForm();
   document.getElementById('currentStatusBadge').textContent = 'กำลังดำเนินการ';
   document.getElementById('currentStatusBadge').style.background = '#f39c12';
+  updateAdminSubmittedBadge(false, false);
   // revert to draft in Supabase
-  const payload = { ...collectFormData(), status: 'draft', updated_at: new Date().toISOString() };
+  const payload = {
+    ...collectFormData(),
+    status: 'draft',
+    updated_at: new Date().toISOString(),
+    admin_submitted: false,
+    admin_closed: false,
+  };
+  _currentCorrectionRecord = { ...(_currentCorrectionRecord || {}), ...payload };
   sbClient.from('cars_corrections').upsert(payload, { onConflict: 'nc_id' }).then(() => {});
+  updateRevisionUI(_currentCorrectionRecord);
   showToast('ปลดล็อกแล้ว — สามารถแก้ไขได้', '#f59e0b');
+}
+
+async function saveInspectorFeedback() {
+  if (!currentNcId) { showToast('กรุณาเลือก NC ก่อน', '#e74c3c'); return; }
+  if (!isAdminUser()) { showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c'); return; }
+  if (_adminClosed[currentNcId]) { showToast('รายการนี้ปิดการแก้ไขแล้ว', '#e74c3c'); return; }
+  if (_currentRevisionView !== 'current') setRevisionView('current');
+
+  const note = (document.getElementById('inspectorFeedbackNote')?.value || '').trim();
+  if (String(_currentCorrectionRecord?.inspector_feedback || '').trim()) {
+    showToast('มีบันทึกข้อเสนอแนะแล้ว กรุณาใช้ปุ่มแก้ไขบันทึกเพื่อไม่ให้นับเป็นครั้งใหม่', '#f59e0b');
+    return;
+  }
+  if (!note) {
+    showToast('กรุณากรอกบันทึกข้อเสนอแนะของผู้ตรวจ', '#e74c3c');
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const currentSnapshot = getCurrentFormSnapshot();
+  const original = hasOriginalSnapshot()
+    ? snapshotFromRecord(_currentCorrectionRecord, true)
+    : currentSnapshot;
+
+  const payload = {
+    ...collectNCBaseData(currentNcId),
+    round: 1,
+    status: 'rejected',
+    updated_at: now,
+    admin_submitted: false,
+    admin_closed: false,
+    revision_round: 1,
+    revision_total: 2,
+    revision_requested: true,
+    revision_requested_at: now,
+    revision_requested_by: currentUser?.name || '',
+    revision_requested_by_id: currentUser?.id || null,
+    inspector_feedback: note,
+    original_extent: original.extent || null,
+    original_root_cause: original.root_cause || null,
+    original_correction: original.correction || null,
+    original_preventive: original.preventive || null,
+    original_impact: original.impact || null,
+    original_file_url: original.file_url || null,
+    original_file_name: original.file_name || null,
+    original_submitted_at: _currentCorrectionRecord?.original_submitted_at || _currentCorrectionRecord?.submitted_at || null,
+    original_submitted_by: _currentCorrectionRecord?.original_submitted_by || _currentCorrectionRecord?.submitted_by || _currentCorrectionRecord?.saved_by || '',
+    submitted_at: _currentCorrectionRecord?.submitted_at || null,
+    submitted_by: _currentCorrectionRecord?.submitted_by || '',
+    submitted_by_id: _currentCorrectionRecord?.submitted_by_id || null,
+    extent: '',
+    root_cause: '',
+    correction: '',
+    preventive: '',
+    impact: '',
+    file_url: '',
+    file_name: '',
+    saved_by: currentUser?.name || '',
+  };
+
+  try {
+    const { error } = await sbClient.from('cars_corrections').upsert(payload, { onConflict: 'nc_id' });
+    if (error) throw error;
+  } catch (err) {
+    const needsColumn = /revision_|original_|inspector_feedback|admin_closed/i.test(err.message || '');
+    showToast(needsColumn
+      ? 'ยังไม่ได้เพิ่ม column สำหรับรอบแก้ไขใน Supabase'
+      : 'บันทึกข้อเสนอแนะไม่สำเร็จ: ' + err.message, '#e74c3c');
+    return;
+  }
+
+  _currentCorrectionRecord = { ...(_currentCorrectionRecord || {}), ...payload };
+  _liveStatus[currentNcId] = 'rejected';
+  _adminSubmitted[currentNcId] = false;
+  _adminClosed[currentNcId] = false;
+  _currentRevisionView = 'current';
+  _currentRevisionDraftCache = null;
+  clearCorrectionInputs();
+  unlockNCForm();
+  document.getElementById('currentStatusBadge').textContent = 'ส่งกลับแก้ไข';
+  document.getElementById('currentStatusBadge').style.background = '#e74c3c';
+  updateAdminSubmittedBadge(false, false);
+  updateRevisionUI(_currentCorrectionRecord);
+  applyFilters();
+  updateHomeSubmittedProgress();
+  showToast('บันทึกข้อเสนอแนะแล้ว — เปิดแก้ไขครั้งที่ 1 (ทั้งหมด 2 ครั้ง)', '#1a6faf');
+}
+
+async function editInspectorFeedback() {
+  if (!currentNcId) { showToast('กรุณาเลือก NC ก่อน', '#e74c3c'); return; }
+  if (!isAdminUser()) { showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c'); return; }
+  if (_adminClosed[currentNcId]) { showToast('รายการนี้ปิดการแก้ไขแล้ว', '#e74c3c'); return; }
+  if (_currentRevisionView !== 'current') setRevisionView('current');
+  if (!String(_currentCorrectionRecord?.inspector_feedback || '').trim()) {
+    showToast('ยังไม่มีบันทึกเดิม กรุณาใช้ปุ่มบันทึก', '#e74c3c');
+    return;
+  }
+
+  const note = (document.getElementById('inspectorFeedbackNote')?.value || '').trim();
+  if (!note) {
+    showToast('กรุณากรอกบันทึกข้อเสนอแนะของผู้ตรวจ', '#e74c3c');
+    return;
+  }
+
+  const updatedAt = new Date().toISOString();
+  try {
+    const { error } = await sbClient.from('cars_corrections')
+      .update({ inspector_feedback: note, updated_at: updatedAt })
+      .eq('nc_id', currentNcId);
+    if (error) throw error;
+  } catch (err) {
+    showToast('แก้ไขบันทึกข้อเสนอแนะไม่สำเร็จ: ' + err.message, '#e74c3c');
+    return;
+  }
+
+  // Intentionally keep revision_round, revision_total, status and snapshot fields unchanged.
+  _currentCorrectionRecord = {
+    ...(_currentCorrectionRecord || {}),
+    inspector_feedback: note,
+    updated_at: updatedAt,
+  };
+  updateInspectorFeedbackSection(_currentCorrectionRecord);
+  showToast('แก้ไขบันทึกข้อเสนอแนะแล้ว — ไม่นับเป็นครั้งใหม่', '#16a34a');
+}
+
+async function closeEditingByAdmin() {
+  if (!currentNcId) { showToast('กรุณาเลือก NC ก่อน', '#e74c3c'); return; }
+  if (!isAdminUser()) { showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c'); return; }
+  if (!_adminSubmitted[currentNcId]) {
+    showToast('ต้อง Admin submit ก่อนจึงจะปิดการแก้ไขได้', '#e74c3c');
+    return;
+  }
+  if (_currentRevisionView !== 'current') setRevisionView('current');
+
+  const now = new Date().toISOString();
+  const payload = {
+    ...collectFormData(),
+    status: _liveStatus[currentNcId] || 'submitted',
+    updated_at: now,
+    admin_submitted: true,
+    admin_closed: true,
+    admin_closed_at: now,
+    admin_closed_by: currentUser?.name || '',
+    admin_closed_by_id: currentUser?.id || null,
+  };
+
+  try {
+    const { error } = await sbClient.from('cars_corrections').upsert(payload, { onConflict: 'nc_id' });
+    if (error) throw error;
+  } catch (err) {
+    const needsColumn = /admin_closed/i.test(err.message || '');
+    showToast(needsColumn
+      ? 'ยังไม่ได้เพิ่ม column admin_closed ใน Supabase'
+      : 'ปิดการแก้ไขไม่สำเร็จ: ' + err.message, '#e74c3c');
+    return;
+  }
+
+  _currentCorrectionRecord = { ...(_currentCorrectionRecord || {}), ...payload };
+  _adminSubmitted[currentNcId] = true;
+  _adminClosed[currentNcId] = true;
+  updateAdminSubmittedBadge(true, true);
+  updateRevisionUI(_currentCorrectionRecord);
+  applyFilters();
+  updateHomeSubmittedProgress();
+  lockNCForm(payload.submitted_by_id, true);
+  showToast('ปิดการแก้ไขเรียบร้อยแล้ว', '#334155');
 }
 
 // ═══════ SUBMIT DONE ═══════
@@ -2015,6 +2879,7 @@ function confirmSubmit() {
 
 async function doSubmitDone() {
   bootstrap.Modal.getInstance(document.getElementById('modalSubmitDone')).hide();
+  if (_currentRevisionView !== 'current') setRevisionView('current');
 
   const payload = {
     ...collectFormData(),
@@ -2038,9 +2903,12 @@ async function doSubmitDone() {
   document.getElementById('currentStatusBadge').style.background = '#16a34a';
   document.getElementById('submittedDateDisplay').textContent = new Date().toLocaleDateString('th-TH');
 
+  _currentCorrectionRecord = { ...(_currentCorrectionRecord || {}), ...payload };
   _liveStatus[currentNcId] = 'submitted';
   applyFilters();
+  updateHomeSubmittedProgress();
   lockNCForm(currentUser?.id);
+  updateRevisionUI(_currentCorrectionRecord);
   showSavedBy(currentUser?.name);
   showToast('ส่งเสร็จแล้ว — บันทึกโดย ' + (currentUser?.name || 'ไม่ระบุ'), '#16a34a');
 }
@@ -2080,7 +2948,7 @@ function doSubmit() {
 
   // Disable form fields
   document.querySelectorAll('.rte-content').forEach(el => el.setAttribute('contenteditable', 'false'));
-  document.querySelectorAll('.form-control, .form-select').forEach(el => el.disabled = true);
+  document.querySelectorAll('#carsForm .form-control, #carsForm .form-select').forEach(el => el.disabled = true);
 }
 
 // ═══════ INSPECTOR REVIEW ═══════
@@ -2099,7 +2967,7 @@ function rejectNC() {
 
   // Re-enable editing
   document.querySelectorAll('.rte-content:not(#rte_problem)').forEach(el => el.setAttribute('contenteditable', 'true'));
-  document.querySelectorAll('.form-control, .form-select').forEach(el => el.disabled = false);
+  document.querySelectorAll('#carsForm .form-control, #carsForm .form-select').forEach(el => el.disabled = false);
 }
 
 // ═══════ TOAST ═══════
@@ -2230,6 +3098,25 @@ function makeSvgGauge(pct, color) {
     </div>`;
 }
 
+function makeMiniClosedGauge(pct) {
+  const R = 21, SW = 5, size = 56;
+  const color = '#334155';
+  const circ = 2 * Math.PI * R;
+  const dashOffset = circ * (1 - pct / 100);
+  return `
+    <div title="ปิดการแก้ไขแล้ว ${pct}%"
+      style="position:absolute;right:-8px;top:-4px;width:${size}px;height:${size}px;background:#fff;border-radius:50%;box-shadow:0 6px 18px rgba(15,23,42,.18);display:flex;align-items:center;justify-content:center">
+      <svg width="${size}" height="${size}" style="transform:rotate(-90deg);display:block">
+        <circle cx="${size/2}" cy="${size/2}" r="${R}" fill="none" stroke="#e2e8f0" stroke-width="${SW}"/>
+        <circle cx="${size/2}" cy="${size/2}" r="${R}" fill="none" stroke="${color}" stroke-width="${SW}"
+          stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${circ.toFixed(2)}"
+          stroke-linecap="round" data-final="${dashOffset.toFixed(2)}"
+          style="transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"/>
+      </svg>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:800;color:${color};line-height:1">${pct}</div>
+    </div>`;
+}
+
 function getPowerColor(pct) {
   if (pct >= 75) return '#16a34a';
   if (pct >= 50) return '#1e5fa0';
@@ -2258,6 +3145,16 @@ async function loadInspectorDashboard() {
   });
 
   const ncStatus = {}; // { nc_id: 'accepted'|'submitted'|'draft' }
+  const ncClosed = {}; // { nc_id: true|false }
+
+  function statusForInspectorDashboard(row) {
+    if (!row) return '';
+    if (row.status === 'accepted') return 'accepted';
+    if (row.status === 'submitted') return 'submitted';
+    if (row.original_submitted_at || row.revision_requested || Number(row.revision_round || 0) > 0)
+      return 'submitted';
+    return row.status || '';
+  }
 
   function renderCards(animate) {
     const W = { accepted: 100, submitted: 100, draft: 50 };
@@ -2267,8 +3164,10 @@ async function loadInspectorDashboard() {
       const submitted = ids.filter(id => ncStatus[id] === 'submitted').length;
       const draft     = ids.filter(id => ncStatus[id] === 'draft').length;
       const pending   = ids.length - accepted - submitted - draft;
-      return { name, ids, power, accepted, submitted, draft, pending };
-    }).sort((a, b) => b.power - a.power);
+      const closed    = ids.filter(id => ncClosed[id]).length;
+      const closedPct = Math.round((closed / ids.length) * 100);
+      return { name, ids, power, accepted, submitted, draft, pending, closed, closedPct };
+    }).sort((a, b) => (b.power - a.power) || (b.closedPct - a.closedPct));
 
     grid.innerHTML = '';
     entries.forEach((e, i) => {
@@ -2280,7 +3179,10 @@ async function loadInspectorDashboard() {
       div.style.position = 'relative';
       div.innerHTML = `
         <div class="power-rank">${rank}</div>
-        ${makeSvgGauge(e.power, color)}
+        <div style="position:relative;display:inline-block">
+          ${makeSvgGauge(e.power, color)}
+          ${makeMiniClosedGauge(e.closedPct)}
+        </div>
         <div class="inspector-name">${e.name}</div>
         <div class="inspector-sub">${e.ids.length} รายการ NC</div>
         <div class="inspector-power-title">เป้าหมาย</div>
@@ -2288,6 +3190,7 @@ async function loadInspectorDashboard() {
         <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:12px">
           ${e.accepted  ? `<span class="nc-chip" style="background:#dcfce7;color:#16a34a">${e.accepted} ยอมรับ</span>` : ''}
           ${e.submitted ? `<span class="nc-chip" style="background:#eff6ff;color:#1e5fa0">${e.submitted} ส่งแล้ว</span>` : ''}
+          ${e.closed    ? `<span class="nc-chip" style="background:#e2e8f0;color:#334155">${e.closed} ปิดแล้ว</span>` : ''}
           ${e.draft     ? `<span class="nc-chip" style="background:#fffbeb;color:#d97706">${e.draft} ดำเนินการ</span>` : ''}
           ${e.pending   ? `<span class="nc-chip" style="background:#f1f5f9;color:#64748b">${e.pending} รอบันทึก</span>` : ''}
         </div>`;
@@ -2312,13 +3215,15 @@ async function loadInspectorDashboard() {
   try {
     const { data: rows } = await sbClient
       .from('cars_corrections')
-      .select('nc_id, status')
+      .select('nc_id, status, submitted_at, original_submitted_at, revision_requested, revision_round, admin_closed')
       .order('updated_at', { ascending: false });
     const priority = { accepted: 3, submitted: 2, draft: 1 };
     (rows || []).forEach(row => {
+      const status = statusForInspectorDashboard(row);
       const cur = ncStatus[row.nc_id];
-      if (!cur || (priority[row.status] || 0) > (priority[cur] || 0))
-        ncStatus[row.nc_id] = row.status;
+      if (!cur || (priority[status] || 0) > (priority[cur] || 0))
+        ncStatus[row.nc_id] = status;
+      if (row.admin_closed) ncClosed[row.nc_id] = true;
     });
     renderCards(true);
   } catch (e) { /* offline / not configured */ }
@@ -2328,6 +3233,10 @@ async function loadInspectorDashboard() {
 
 // ═══════ PAGE NAVIGATION ═══════
 function showPage(page) {
+  if (page === 'settings' && !isAdminUser()) {
+    showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c');
+    page = 'home';
+  }
   if (page === 'nc' && !currentUser) {
     pendingPage = 'nc';
     showLoginScreen();
@@ -2335,23 +3244,27 @@ function showPage(page) {
   }
   document.getElementById('page-home').style.display = page === 'home' ? '' : 'none';
   document.getElementById('page-nc').style.display   = page === 'nc'   ? '' : 'none';
+  document.getElementById('page-settings').style.display = page === 'settings' ? '' : 'none';
   document.getElementById('li-home').classList.toggle('active', page === 'home');
   document.getElementById('li-nc').classList.toggle('active', page === 'nc');
+  document.getElementById('li-settings').classList.toggle('active', page === 'settings');
   location.hash = page;
   if (page === 'home') loadInspectorDashboard();
   if (page === 'nc') fetchLiveStatuses();
+  if (page === 'settings') fillSettingsForm();
 }
 
 // ═══════ COUNTDOWN TIMER ═══════
-(function initCountdown() {
-  const TARGET = new Date('2026-07-05T00:00:00');
-  const START  = new Date('2026-06-05T00:00:00');
-  const totalMs = TARGET - START;
+const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function thDate(d) {
+  return `${d.getDate()} ${thMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
 
-  const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  function thDate(d) {
-    return `${d.getDate()} ${thMonths[d.getMonth()]} ${d.getFullYear() + 543}`;
-  }
+function restartCountdown() {
+  if (countdownTimer) clearTimeout(countdownTimer);
+  const TARGET = new Date(`${appSettings.targetDate || DEFAULT_APP_SETTINGS.targetDate}T00:00:00`);
+  const START  = new Date(`${appSettings.startDate || DEFAULT_APP_SETTINGS.startDate}T00:00:00`);
+  const totalMs = Math.max(1, TARGET - START);
 
   document.getElementById('cd-target-label').textContent  = 'เป้าหมาย: ' + thDate(TARGET);
   document.getElementById('cd-start-label').textContent   = thDate(START);
@@ -2359,7 +3272,6 @@ function showPage(page) {
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
-  let timer;
   function tick() {
     const now  = new Date();
     const diff = TARGET - now;
@@ -2378,10 +3290,10 @@ function showPage(page) {
     document.getElementById('cd-progress').style.width = pct.toFixed(2) + '%';
     document.getElementById('cd-pct-label').textContent = pct.toFixed(1) + '% ระยะเวลาที่ผ่านไป';
 
-    timer = setTimeout(tick, 1000);
+    countdownTimer = setTimeout(tick, 1000);
   }
   tick();
-})();
+}
 
 // ═══════ HOME STATS ═══════
 (function renderHomeStats() {
@@ -2391,6 +3303,8 @@ function showPage(page) {
   const typeNC = NC_DATA.filter(n => n.ncType === 'NC').length;
 
   const cards = [
+    { num: '0%',           label: 'ปิด CAR', icon: 'fa-lock', color: '#334155', bg: '#e2e8f0', progressKind: 'closed' },
+    { num: '0%',           label: 'Submitted จาก CAR ทั้งหมด', icon: 'fa-clipboard-check', color: '#16a34a', bg: '#dcfce7', progressKind: 'submitted' },
     { num: NC_DATA.length, label: 'NC ทั้งหมด',      icon: 'fa-list-check',          color: '#1e5fa0', bg: '#eff6ff' },
     { num: iso89,          label: 'ISO 15189',         icon: 'fa-flask',               color: '#7c3aed', bg: '#f5f3ff' },
     { num: iso90,          label: 'ISO 15190',         icon: 'fa-shield-halved',       color: '#0e7490', bg: '#ecfeff' },
@@ -2400,17 +3314,82 @@ function showPage(page) {
   const grid = document.getElementById('home-stats-grid');
   cards.forEach(c => {
     const div = document.createElement('div');
-    div.className = 'home-stat-card';
-    div.innerHTML = `
+    const isProgress = !!c.progressKind;
+    div.className = isProgress ? 'home-stat-card home-stat-card--featured' : 'home-stat-card';
+    if (isProgress) {
+      div.style.background = c.bg;
+      div.style.borderColor = c.color;
+      div.style.boxShadow = `0 10px 30px ${c.color}33`;
+      div.style.setProperty('--featured-bg', c.bg);
+      div.style.setProperty('--featured-accent', c.color);
+      div.style.setProperty('--featured-shadow', `${c.color}33`);
+      div.style.setProperty('--featured-shadow-strong', `${c.color}66`);
+    }
+    div.innerHTML = isProgress ? `
+      <div class="home-stat-icon-wrap" style="background:${c.color};box-shadow:0 6px 18px ${c.color}66"><i class="fa-solid ${c.icon}"></i></div>
+      <div class="home-stat-body">
+        <div class="home-stat-num" style="color:${c.color}" id="home${c.progressKind}Pct">${c.num}</div>
+        <div class="home-stat-label" style="color:${c.color}">${c.label}</div>
+        <div id="home${c.progressKind}Count" style="font-size:12.5px;color:${c.color};margin-top:8px;font-weight:700">0/${NC_DATA.length} รายการ</div>
+        <div style="height:9px;background:rgba(255,255,255,.7);border-radius:99px;overflow:hidden;margin-top:9px">
+          <div id="home${c.progressKind}Bar" style="height:100%;width:0%;background:${c.color};border-radius:99px;transition:width .35s ease"></div>
+        </div>
+      </div>` : `
       <div class="home-stat-icon" style="color:${c.color}"><i class="fa-solid ${c.icon}"></i></div>
       <div class="home-stat-num" style="color:${c.color}">${c.num}</div>
       <div class="home-stat-label">${c.label}</div>`;
     grid.appendChild(div);
   });
+  updateHomeSubmittedProgress();
 })();
+
+async function updateHomeSubmittedProgress() {
+  const total = NC_DATA.length;
+  let submitted = 0;
+  let closed = 0;
+
+  try {
+    const validIds = new Set(NC_DATA.map(nc => nc.id));
+    const { data: rows, error } = await sbClient
+      .from('cars_corrections')
+      .select('nc_id, status, submitted_at, original_submitted_at, admin_submitted, admin_closed')
+      .order('updated_at', { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    const seen = new Set();
+    (rows || []).forEach(row => {
+      if (seen.has(row.nc_id) || !validIds.has(row.nc_id)) return;
+      seen.add(row.nc_id);
+      if (row.admin_submitted) submitted += 1;
+      if (row.admin_closed) closed += 1;
+    });
+  } catch(e) {
+    submitted = Object.entries(_adminSubmitted).filter(([id, val]) =>
+      val && NC_DATA.some(nc => String(nc.id) === String(id))
+    ).length;
+    closed = Object.entries(_adminClosed).filter(([id, val]) =>
+      val && NC_DATA.some(nc => String(nc.id) === String(id))
+    ).length;
+  }
+
+  function updateProgress(kind, count) {
+    const pct = total ? Math.round((count / total) * 100) : 0;
+    const pctEl = document.getElementById(`home${kind}Pct`);
+    const countEl = document.getElementById(`home${kind}Count`);
+    const barEl = document.getElementById(`home${kind}Bar`);
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (countEl) countEl.textContent = `${count}/${total} รายการ`;
+    if (barEl) barEl.style.width = pct + '%';
+  }
+
+  updateProgress('submitted', submitted);
+  updateProgress('closed', closed);
+}
 
 // ═══════ INIT ═══════
 document.getElementById('submittedDateDisplay').textContent = '—';
+applyAppSettings(DEFAULT_APP_SETTINGS);
+loadAppSettings();
 initAuth(); // auth → applyFilters/loadNC/showPage เรียกใน onAuthSuccess
 
 // ═══════ SIDEBAR MOBILE TOGGLE ═══════
