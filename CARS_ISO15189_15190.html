@@ -1161,6 +1161,10 @@
               style="padding:7px 14px;font-size:12.5px">
               <i class="fa-solid fa-floppy-disk"></i> บันทึก
             </button>
+            <button type="button" id="btn-edit-inspector-feedback" onclick="editInspectorFeedback()"
+              style="display:none;background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;gap:7px">
+              <i class="fa-solid fa-pen-to-square"></i> แก้ไขบันทึก
+            </button>
             <span style="font-size:11.5px;color:#64748b">เมื่อบันทึก ระบบจะเก็บต้นฉบับและเปิดรอบแก้ไขครั้งที่ 1</span>
           </div>
         </div>
@@ -2369,14 +2373,17 @@ function updateRevisionViewButtons() {
 function updateInspectorFeedbackSection(record = _currentCorrectionRecord) {
   const section = document.getElementById('inspectorFeedbackSection');
   const note = document.getElementById('inspectorFeedbackNote');
-  const btn = document.getElementById('btn-save-inspector-feedback');
-  if (!section || !note || !btn) return;
+  const saveBtn = document.getElementById('btn-save-inspector-feedback');
+  const editBtn = document.getElementById('btn-edit-inspector-feedback');
+  if (!section || !note || !saveBtn || !editBtn) return;
   const admin = isAdminUser();
   section.style.display = '';
   note.value = record?.inspector_feedback || '';
   const editable = admin && _currentRevisionView === 'current' && !_adminClosed[currentNcId];
+  const hasFeedback = !!String(record?.inspector_feedback || '').trim();
   note.disabled = !editable;
-  btn.style.display = editable ? 'inline-flex' : 'none';
+  saveBtn.style.display = editable && !hasFeedback ? 'inline-flex' : 'none';
+  editBtn.style.display = editable && hasFeedback ? 'inline-flex' : 'none';
 }
 
 function updateRevisionUI(record = _currentCorrectionRecord) {
@@ -2705,6 +2712,10 @@ async function saveInspectorFeedback() {
   if (_currentRevisionView !== 'current') setRevisionView('current');
 
   const note = (document.getElementById('inspectorFeedbackNote')?.value || '').trim();
+  if (String(_currentCorrectionRecord?.inspector_feedback || '').trim()) {
+    showToast('มีบันทึกข้อเสนอแนะแล้ว กรุณาใช้ปุ่มแก้ไขบันทึกเพื่อไม่ให้นับเป็นครั้งใหม่', '#f59e0b');
+    return;
+  }
   if (!note) {
     showToast('กรุณากรอกบันทึกข้อเสนอแนะของผู้ตรวจ', '#e74c3c');
     return;
@@ -2778,6 +2789,43 @@ async function saveInspectorFeedback() {
   applyFilters();
   updateHomeSubmittedProgress();
   showToast('บันทึกข้อเสนอแนะแล้ว — เปิดแก้ไขครั้งที่ 1 (ทั้งหมด 2 ครั้ง)', '#1a6faf');
+}
+
+async function editInspectorFeedback() {
+  if (!currentNcId) { showToast('กรุณาเลือก NC ก่อน', '#e74c3c'); return; }
+  if (!isAdminUser()) { showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c'); return; }
+  if (_adminClosed[currentNcId]) { showToast('รายการนี้ปิดการแก้ไขแล้ว', '#e74c3c'); return; }
+  if (_currentRevisionView !== 'current') setRevisionView('current');
+  if (!String(_currentCorrectionRecord?.inspector_feedback || '').trim()) {
+    showToast('ยังไม่มีบันทึกเดิม กรุณาใช้ปุ่มบันทึก', '#e74c3c');
+    return;
+  }
+
+  const note = (document.getElementById('inspectorFeedbackNote')?.value || '').trim();
+  if (!note) {
+    showToast('กรุณากรอกบันทึกข้อเสนอแนะของผู้ตรวจ', '#e74c3c');
+    return;
+  }
+
+  const updatedAt = new Date().toISOString();
+  try {
+    const { error } = await sbClient.from('cars_corrections')
+      .update({ inspector_feedback: note, updated_at: updatedAt })
+      .eq('nc_id', currentNcId);
+    if (error) throw error;
+  } catch (err) {
+    showToast('แก้ไขบันทึกข้อเสนอแนะไม่สำเร็จ: ' + err.message, '#e74c3c');
+    return;
+  }
+
+  // Intentionally keep revision_round, revision_total, status and snapshot fields unchanged.
+  _currentCorrectionRecord = {
+    ...(_currentCorrectionRecord || {}),
+    inspector_feedback: note,
+    updated_at: updatedAt,
+  };
+  updateInspectorFeedbackSection(_currentCorrectionRecord);
+  showToast('แก้ไขบันทึกข้อเสนอแนะแล้ว — ไม่นับเป็นครั้งใหม่', '#16a34a');
 }
 
 async function closeEditingByAdmin() {
