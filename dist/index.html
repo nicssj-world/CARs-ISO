@@ -1165,6 +1165,10 @@
               style="display:none;background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;gap:7px">
               <i class="fa-solid fa-pen-to-square"></i> แก้ไขบันทึก
             </button>
+            <button type="button" id="btn-delete-inspector-feedback" onclick="deleteInspectorFeedback()"
+              style="display:none;background:#dc2626;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;gap:7px">
+              <i class="fa-solid fa-trash"></i> ลบและย้อนกลับต้นฉบับ
+            </button>
             <span style="font-size:11.5px;color:#64748b">เมื่อบันทึก ระบบจะเก็บต้นฉบับและเปิดรอบแก้ไขครั้งที่ 1</span>
           </div>
         </div>
@@ -2375,7 +2379,8 @@ function updateInspectorFeedbackSection(record = _currentCorrectionRecord) {
   const note = document.getElementById('inspectorFeedbackNote');
   const saveBtn = document.getElementById('btn-save-inspector-feedback');
   const editBtn = document.getElementById('btn-edit-inspector-feedback');
-  if (!section || !note || !saveBtn || !editBtn) return;
+  const deleteBtn = document.getElementById('btn-delete-inspector-feedback');
+  if (!section || !note || !saveBtn || !editBtn || !deleteBtn) return;
   const admin = isAdminUser();
   section.style.display = '';
   note.value = record?.inspector_feedback || '';
@@ -2384,6 +2389,7 @@ function updateInspectorFeedbackSection(record = _currentCorrectionRecord) {
   note.disabled = !editable;
   saveBtn.style.display = editable && !hasFeedback ? 'inline-flex' : 'none';
   editBtn.style.display = editable && hasFeedback ? 'inline-flex' : 'none';
+  deleteBtn.style.display = editable && hasFeedback ? 'inline-flex' : 'none';
 }
 
 function updateRevisionUI(record = _currentCorrectionRecord) {
@@ -2826,6 +2832,33 @@ async function editInspectorFeedback() {
   };
   updateInspectorFeedbackSection(_currentCorrectionRecord);
   showToast('แก้ไขบันทึกข้อเสนอแนะแล้ว — ไม่นับเป็นครั้งใหม่', '#16a34a');
+}
+
+async function deleteInspectorFeedback() {
+  if (!currentNcId || !isAdminUser()) { showToast('อนุญาตเฉพาะ Admin เท่านั้น', '#e74c3c'); return; }
+  if (_adminClosed[currentNcId]) { showToast('รายการนี้ปิดการแก้ไขแล้ว', '#e74c3c'); return; }
+  if (!hasOriginalSnapshot()) { showToast('ไม่พบข้อมูลต้นฉบับสำหรับย้อนกลับ', '#e74c3c'); return; }
+  if (!confirm('ยืนยันลบข้อเสนอแนะทั้งหมดและย้อนกลับข้อมูลต้นฉบับหรือไม่? การดำเนินการนี้จะรีเซ็ตเป็นยังไม่เริ่มรอบแก้ไข')) return;
+  const original = snapshotFromRecord(_currentCorrectionRecord, true);
+  const now = new Date().toISOString();
+  const payload = {
+    extent: original.extent || '', root_cause: original.root_cause || '', correction: original.correction || '',
+    preventive: original.preventive || '', impact: original.impact || '', file_url: original.file_url || '', file_name: original.file_name || '',
+    status: 'submitted', round: 0, revision_round: 0, revision_total: 1, revision_requested: false,
+    revision_requested_at: null, revision_requested_by: '', revision_requested_by_id: null, inspector_feedback: null,
+    original_extent: null, original_root_cause: null, original_correction: null, original_preventive: null,
+    original_impact: null, original_file_url: null, original_file_name: null, original_submitted_at: null, original_submitted_by: null,
+    admin_submitted: false, admin_closed: false, updated_at: now
+  };
+  try {
+    const { error } = await sbClient.from('cars_corrections').update(payload).eq('nc_id', currentNcId);
+    if (error) throw error;
+  } catch (err) { showToast('ลบข้อเสนอแนะไม่สำเร็จ: ' + err.message, '#e74c3c'); return; }
+  _currentCorrectionRecord = { ...(_currentCorrectionRecord || {}), ...payload };
+  _liveStatus[currentNcId] = 'submitted'; _adminSubmitted[currentNcId] = false; _adminClosed[currentNcId] = false;
+  _currentRevisionView = 'current'; _currentRevisionDraftCache = null;
+  applyFormSnapshot(original); unlockNCForm(); updateRevisionUI(_currentCorrectionRecord); updateAdminSubmittedBadge(false, false); applyFilters();
+  showToast('ลบข้อเสนอแนะแล้ว — ย้อนกลับต้นฉบับและไม่นับเป็นครั้งใหม่', '#16a34a');
 }
 
 async function closeEditingByAdmin() {
