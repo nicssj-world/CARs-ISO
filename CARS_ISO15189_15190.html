@@ -1169,7 +1169,7 @@
               style="display:none;background:#dc2626;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;align-items:center;gap:7px">
               <i class="fa-solid fa-trash"></i> ลบและย้อนกลับต้นฉบับ
             </button>
-            <span style="font-size:11.5px;color:#64748b">เมื่อบันทึก ระบบจะเก็บต้นฉบับและเปิดรอบแก้ไขครั้งที่ 1</span>
+            <span id="inspectorFeedbackHint" style="font-size:11.5px;color:#64748b">เมื่อบันทึก ระบบจะเก็บต้นฉบับและเปิดรอบแก้ไขครั้งที่ 1</span>
           </div>
         </div>
 
@@ -2065,6 +2065,10 @@ function renderNCList(data) {
     const status = dbStatus ? (STATUS_LABEL[dbStatus] || dbStatus) : 'รอการบันทึกแก้ไข';
     const { bg: stBg, clr: stClr } = STATUS_STYLE[dbStatus] || STATUS_STYLE.default;
     const adminSubmitted = !!_adminSubmitted[nc.id];
+    const revisionRound = Number(_revisionRound[nc.id] || 0);
+    const revisionBadge = revisionRound > 0
+      ? `<span title="อยู่ระหว่างการแก้ไขครั้งที่ ${revisionRound}" style="display:inline-block;background:#e0f2fe;color:#075985;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;margin-top:5px">แก้ไขครั้งที่ ${revisionRound}</span>`
+      : '';
     const adminSubmittedBadge = getAdminWorkflowBadge(nc.id, true);
     const adminSubmittedToggle = isAdminUser() && !_adminClosed[nc.id] ? `
         <label style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:10.5px;color:#475569;cursor:pointer">
@@ -2086,6 +2090,7 @@ function renderNCList(data) {
       <td style="font-size:11.5px;color:#444;line-height:1.55;min-width:280px">${probShort}</td>
       <td style="white-space:nowrap">
         <span style="background:${stBg};color:${stClr};padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600">${status}</span>
+        ${revisionBadge}
         ${adminSubmittedBadge}
         ${adminSubmittedToggle}
       </td>
@@ -2107,6 +2112,7 @@ let _activeTypeFilter = 'all';
 let _liveStatus = {}; // { nc_id: 'draft'|'submitted'|'accepted'|'rejected' }
 let _adminSubmitted = {}; // { nc_id: true|false }
 let _adminClosed = {}; // { nc_id: true|false }
+let _revisionRound = {}; // { nc_id: current revision round }
 let _currentCorrectionRecord = null;
 let _currentRevisionView = 'current';
 let _currentRevisionDraftCache = null;
@@ -2163,6 +2169,7 @@ async function fetchLiveStatuses() {
       _liveStatus[row.nc_id] = row.status;
       _adminSubmitted[row.nc_id] = !!row.admin_submitted;
       _adminClosed[row.nc_id] = !!row.admin_closed;
+      _revisionRound[row.nc_id] = Number(row.revision_round || 0);
       seen.add(row.nc_id);
     });
     applyFilters();
@@ -2386,8 +2393,16 @@ function updateInspectorFeedbackSection(record = _currentCorrectionRecord) {
   note.value = record?.inspector_feedback || '';
   const editable = admin && _currentRevisionView === 'current' && !_adminClosed[currentNcId];
   const hasFeedback = !!String(record?.inspector_feedback || '').trim();
+  const nextRound = Number(record?.revision_round || 0) + 1;
+  const hint = document.getElementById('inspectorFeedbackHint');
   note.disabled = !editable;
-  saveBtn.style.display = editable && !hasFeedback ? 'inline-flex' : 'none';
+  saveBtn.style.display = editable ? 'inline-flex' : 'none';
+  saveBtn.innerHTML = hasFeedback
+    ? `<i class="fa-solid fa-floppy-disk"></i> บันทึกและเปิดแก้ไขครั้งที่ ${nextRound}`
+    : '<i class="fa-solid fa-floppy-disk"></i> บันทึก';
+  if (hint) hint.textContent = hasFeedback
+    ? `บันทึกข้อเสนอแนะนี้เพื่อเปิดรอบแก้ไขครั้งที่ ${nextRound}`
+    : 'เมื่อบันทึก ระบบจะเก็บต้นฉบับและเปิดรอบแก้ไขครั้งที่ 1';
   editBtn.style.display = editable && hasFeedback ? 'inline-flex' : 'none';
   deleteBtn.style.display = editable && hasFeedback ? 'inline-flex' : 'none';
 }
@@ -2518,6 +2533,7 @@ async function loadNC(id) {
         _currentCorrectionRecord = d;
         _adminSubmitted[id] = !!d.admin_submitted;
         _adminClosed[id] = !!d.admin_closed;
+        _revisionRound[id] = Number(d.revision_round || 0);
         _liveStatus[id] = d.status;
         updateAdminSubmittedBadge(!!d.admin_submitted, !!d.admin_closed);
         applyFormSnapshot(snapshotFromRecord(d, false));
@@ -2718,16 +2734,14 @@ async function saveInspectorFeedback() {
   if (_currentRevisionView !== 'current') setRevisionView('current');
 
   const note = (document.getElementById('inspectorFeedbackNote')?.value || '').trim();
-  if (String(_currentCorrectionRecord?.inspector_feedback || '').trim()) {
-    showToast('มีบันทึกข้อเสนอแนะแล้ว กรุณาใช้ปุ่มแก้ไขบันทึกเพื่อไม่ให้นับเป็นครั้งใหม่', '#f59e0b');
-    return;
-  }
   if (!note) {
     showToast('กรุณากรอกบันทึกข้อเสนอแนะของผู้ตรวจ', '#e74c3c');
     return;
   }
 
   const now = new Date().toISOString();
+  const nextRound = Number(_currentCorrectionRecord?.revision_round || 0) + 1;
+  const nextTotal = nextRound + 1;
   const currentSnapshot = getCurrentFormSnapshot();
   const original = hasOriginalSnapshot()
     ? snapshotFromRecord(_currentCorrectionRecord, true)
@@ -2735,13 +2749,13 @@ async function saveInspectorFeedback() {
 
   const payload = {
     ...collectNCBaseData(currentNcId),
-    round: 1,
+    round: nextRound,
     status: 'rejected',
     updated_at: now,
     admin_submitted: false,
     admin_closed: false,
-    revision_round: 1,
-    revision_total: 2,
+    revision_round: nextRound,
+    revision_total: nextTotal,
     revision_requested: true,
     revision_requested_at: now,
     revision_requested_by: currentUser?.name || '',
@@ -2784,6 +2798,7 @@ async function saveInspectorFeedback() {
   _liveStatus[currentNcId] = 'rejected';
   _adminSubmitted[currentNcId] = false;
   _adminClosed[currentNcId] = false;
+  _revisionRound[currentNcId] = nextRound;
   _currentRevisionView = 'current';
   _currentRevisionDraftCache = null;
   clearCorrectionInputs();
@@ -2794,7 +2809,7 @@ async function saveInspectorFeedback() {
   updateRevisionUI(_currentCorrectionRecord);
   applyFilters();
   updateHomeSubmittedProgress();
-  showToast('บันทึกข้อเสนอแนะแล้ว — เปิดแก้ไขครั้งที่ 1 (ทั้งหมด 2 ครั้ง)', '#1a6faf');
+  showToast(`บันทึกข้อเสนอแนะแล้ว — เปิดแก้ไขครั้งที่ ${nextRound} (ทั้งหมด ${nextTotal} ครั้ง)`, '#1a6faf');
 }
 
 async function editInspectorFeedback() {
@@ -2855,7 +2870,7 @@ async function deleteInspectorFeedback() {
     if (error) throw error;
   } catch (err) { showToast('ลบข้อเสนอแนะไม่สำเร็จ: ' + err.message, '#e74c3c'); return; }
   _currentCorrectionRecord = { ...(_currentCorrectionRecord || {}), ...payload };
-  _liveStatus[currentNcId] = 'submitted'; _adminSubmitted[currentNcId] = false; _adminClosed[currentNcId] = false;
+  _liveStatus[currentNcId] = 'submitted'; _adminSubmitted[currentNcId] = false; _adminClosed[currentNcId] = false; _revisionRound[currentNcId] = 0;
   _currentRevisionView = 'current'; _currentRevisionDraftCache = null;
   applyFormSnapshot(original); unlockNCForm(); updateRevisionUI(_currentCorrectionRecord); updateAdminSubmittedBadge(false, false); applyFilters();
   showToast('ลบข้อเสนอแนะแล้ว — ย้อนกลับต้นฉบับและไม่นับเป็นครั้งใหม่', '#16a34a');
